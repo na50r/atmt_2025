@@ -18,6 +18,8 @@ from seq2seq.data.tokenizer import BPETokenizer
 from seq2seq import models, utils
 from seq2seq.data.dataset import Seq2SeqDataset, BatchSampler
 
+import pickle
+
 def decode_to_string(tokenizer, array):
     """
     Takes a tensor of token IDs and decodes it back into a string."""
@@ -44,6 +46,8 @@ def get_args():
     parser.add_argument('--bleu', action='store_true', help='If set, compute BLEU score after translation')
     parser.add_argument('--reference', type=str, help='Path to the reference file (one sentence per line, required if --bleu is set)')
     
+    # Input handling
+    parser.add_argument('--encoded', action='store_true', help="If set, convert input into text before translating")
     return parser.parse_args()
 
 
@@ -64,8 +68,16 @@ def main(args):
     #                                     max_seq_len=args.max_len)
 
     # Read input sentences
-    with open(args.input, encoding="utf-8") as f:
-        src_lines = [line.strip() for line in f if line.strip()]
+    src_lines = None
+    if getattr(args, 'encoded', False):
+        with open(args.input, "rb") as f:
+            data = pickle.load(f)
+            src_lines_from_array = [decode_to_string(src_tokenizer, torch.tensor(d)).split('\n') for d in data]
+            src_lines_from_array = [row[0] for row in src_lines_from_array]
+            src_lines = [line.strip() for line in f if line.strip()]
+    else:
+        with open(args.input, encoding="utf-8") as f:
+            src_lines = [line.strip() for line in f if line.strip()]
 
     # Encode input sentences
     src_encoded = [torch.tensor(src_tokenizer.Encode(line, out_type=int)) for line in src_lines]
