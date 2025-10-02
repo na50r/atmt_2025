@@ -21,4 +21,3 @@ python decoder.py \
     --checkpoint-path cz-en/checkpoints/checkpoint_best.pt \
     --output cz-en/output.txt \
     --max-len 300 \
-    --encoded

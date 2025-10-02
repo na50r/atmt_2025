@@ -42,7 +42,6 @@ def get_args():
     parser.add_argument('--max-len', default=128, type=int, help='maximum length of generated sequence')
      
     # Input handling
-    parser.add_argument('--encoded', action='store_true', help="If set, convert input into text before translating")
     return parser.parse_args()
 
 
@@ -54,20 +53,15 @@ def main(args):
     args_loaded = argparse.Namespace(**{**vars(state_dict['args']), **vars(args)})
     args = args_loaded
     utils.init_logging(args)
-
-
     src_tokenizer = utils.load_tokenizer(args.src_tokenizer)
-
-    # Read input sentences
-    if getattr(args, 'encoded', False):
-        with open(args.input, "rb") as f:
-            data = pickle.load(f)
-            src_lines_from_array = [decode_to_string(src_tokenizer, torch.tensor(d)).split('\n') for d in data]
-            src_lines_from_array = [row[0] for row in src_lines_from_array]
-            src_lines = [line.strip() for line in f if line.strip()]
-            with open('decoded.txt', 'w') as f:
-                for s in src_lines:
-                    print(s, file=f)
+    with open(args.input, "rb") as f:
+        data = pickle.load(f)
+        src_lines_from_array = [decode_to_string(src_tokenizer, torch.tensor(d)).split('\n') for d in data]
+        src_lines_from_array = [row[0] for row in src_lines_from_array]
+        src_lines = [line.strip() for line in f if line.strip()]
+        with open('decoded.txt', 'w') as f:
+            for s in src_lines:
+                print(s, file=f)
 
 if __name__ == '__main__':
     args = get_args()
