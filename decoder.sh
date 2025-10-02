@@ -20,4 +20,5 @@ python decoder.py \
     --src-tokenizer cz-en/tokenizers/cz-bpe-8000.model \
     --checkpoint-path cz-en/checkpoints/checkpoint_best.pt \
     --output cz-en/output.txt \
-    --max-len 300
+    --max-len 300 \
+    --encoded
