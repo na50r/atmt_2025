@@ -59,9 +59,9 @@ def main(args):
         src_lines_from_array = [decode_to_string(src_tokenizer, torch.tensor(d)).split('\n') for d in data]
         src_lines_from_array = [row[0] for row in src_lines_from_array]
         src_lines = [line.strip() for line in f if line.strip()]
-        with open('decoded.txt', 'w') as f:
-            for s in src_lines:
-                print(s, file=f)
+    with open('decoded.txt', 'w') as f:
+        for s in src_lines:
+            print(s, file=f)
 
 if __name__ == '__main__':
     args = get_args()
