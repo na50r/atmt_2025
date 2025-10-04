@@ -20,7 +20,8 @@ toy_example/toy_example_output.en
 # other outputs
 /example
 /cz-en
-/ep_test
+/ep-sk-en-test
+/cz-en-test
 
 # unused
 seq2seq/embedding_saver.py
