@@ -19,7 +19,7 @@ python translate.py \
     --src-tokenizer cz-en/tokenizers/cz-bpe-8000.model \
     --tgt-tokenizer cz-en/tokenizers/en-bpe-8000.model \
     --checkpoint-path cz-en/checkpoints/checkpoint_best.pt \
-    --output cz-en/output/only_translate_output.txt \
+    --output only_translate_output.txt \
     --bleu \
     --reference ~/shares/atomt.pilot.s3it.uzh/cz-en/data/raw/test.en \
     --max-len 300
