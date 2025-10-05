@@ -55,9 +55,11 @@ python train.py \
 # TRANSLATE
 python translate.py \
     --cuda \
-    --input cz-en/data/raw/test.cz \
+    --input ~/shares/atomt.pilot.s3it.uzh/cz-en/data/raw/test.cz \
     --src-tokenizer cz-en/tokenizers/cz-bpe-8000.model \
     --tgt-tokenizer cz-en/tokenizers/en-bpe-8000.model \
     --checkpoint-path cz-en/checkpoints/checkpoint_best.pt \
     --output cz-en/output.txt \
+    --bleu \
+    --reference ~/shares/atomt.pilot.s3it.uzh/cz-en/data/raw/test.en \
     --max-len 300
