@@ -11,6 +11,11 @@ repo_outline.md
 trim.py
 
 # toy example outputs
+toy_example_gpu/data/prepared/*
+toy_example_gpu/tokenizers
+toy_example_gpu/logs
+toy_example_gpu/checkpoints
+toy_example_gpu/toy_example_output.en
 
 toy_example/data/prepared/*
 toy_example/tokenizers
