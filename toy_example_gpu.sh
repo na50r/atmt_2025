@@ -5,7 +5,7 @@
 #SBATCH --mem=8GB
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus=1
-#SBATCH --output=toy_example.out
+#SBATCH --output=toy_example_gpu.out
 
 # module load gpu
 module load mamba
@@ -20,7 +20,6 @@ rm -rf toy_example_gpu/logs
 rm -f toy_example_gpu/toy_example_output.en
 
 python preprocess.py \
-    --cuda \
     --source-lang cz \
     --target-lang en \
     --raw-data ./toy_example_gpu/data/raw \
