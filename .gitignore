@@ -24,7 +24,10 @@ toy_example/checkpoints
 toy_example/toy_example_output.en
 # other outputs
 /example
-/cz-en
+#/cz-en
+cz-en/data
+cz-en/tokenizers
+cz-en/checkpoints
 ep-sk-en-test/
 
 # unused
