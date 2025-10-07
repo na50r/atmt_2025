@@ -1,0 +1,14 @@
+Epoch 000: loss 1.954 | lr 0.0003 | num_tokens 18.48 | batch_size 64 | grad_norm 17.96 | clip 0.9405
+Epoch 000: valid_loss 2.44 | num_tokens 18 | batch_size 5e+03 | valid_perplexity 11.4 | BLEU 8.077
+Epoch 001: loss 1.577 | lr 0.0003 | num_tokens 18.48 | batch_size 64 | grad_norm 13.74 | clip 0.8956
+Epoch 001: valid_loss 2.09 | num_tokens 18 | batch_size 5e+03 | valid_perplexity 8.08 | BLEU 12.309
+Epoch 002: loss 1.471 | lr 0.0003 | num_tokens 18.48 | batch_size 64 | grad_norm 13.09 | clip 0.8621
+Epoch 002: valid_loss 1.98 | num_tokens 18 | batch_size 5e+03 | valid_perplexity 7.28 | BLEU 11.760
+Epoch 003: loss 1.413 | lr 0.0003 | num_tokens 18.48 | batch_size 64 | grad_norm 13.59 | clip 0.8589
+Epoch 003: valid_loss 1.9 | num_tokens 18 | batch_size 5e+03 | valid_perplexity 6.69 | BLEU 14.199
+Epoch 004: loss 1.375 | lr 0.0003 | num_tokens 18.48 | batch_size 64 | grad_norm 14.62 | clip 0.8682
+Epoch 004: valid_loss 1.83 | num_tokens 18 | batch_size 5e+03 | valid_perplexity 6.25 | BLEU 16.631
+Epoch 005: loss 1.349 | lr 0.0003 | num_tokens 18.48 | batch_size 64 | grad_norm 15.87 | clip 0.8812
+Epoch 005: valid_loss 1.78 | num_tokens 18 | batch_size 5e+03 | valid_perplexity 5.96 | BLEU 17.378
+Epoch 006: loss 1.329 | lr 0.0003 | num_tokens 18.48 | batch_size 64 | grad_norm 17.33 | clip 0.8953
+Epoch 006: valid_loss 1.76 | num_tokens 18 | batch_size 5e+03 | valid_perplexity 5.82 | BLEU 19.658
