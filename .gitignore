@@ -25,6 +25,7 @@ toy_example/toy_example_output.en
 # other outputs
 /example
 /cz-en
+ep-sk-en-test/
 
 # unused
 seq2seq/embedding_saver.py
