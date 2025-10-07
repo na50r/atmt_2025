@@ -1,3 +1,5 @@
 toy_example_gpu, 23471690
 toy_example, 23471691
 assignment1, 23471907
+cz-en, 23486907
+sk-en, 23486950
