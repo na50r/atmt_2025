@@ -60,6 +60,7 @@ def decode_binary_dataset(input_file, output_file, preprocessor: BPETokenizer, i
         # Optional: remove EOS token if included in the decoded string
         text = text.replace(preprocessor.eos, "").strip()
         decoded_sentences.append(text)
+        logging.info(text)
 
     # Write to output .txt
     with open(output_file, "w", encoding="utf-8") as f:
