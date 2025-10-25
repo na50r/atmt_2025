@@ -8,9 +8,9 @@ from seq2seq.data.tokenizer import BPETokenizer
 def get_args():
     parser = argparse.ArgumentParser(
         description="Reconstruct text data from binary datasets.")
-    parser.add_argument("--binary-dir", type=str, required=True,
+    parser.add_argument("--binary_dir", type=str, required=True,
                         help="Directory containing binary dataset files (e.g., train.en, valid.de).")
-    parser.add_argument("--output-dir", type=str, required=True,
+    parser.add_argument("--output_dir", type=str, required=True,
                         help="Directory to save reconstructed text files.")
     parser.add_argument("--src-model", type=str, required=True,
                         help="Path to the Source Language SentencePiece/BPE model.")
@@ -98,7 +98,7 @@ def main():
     # Loop over splits
     for split in ["train", "tiny_train", "valid", "test"]:
         for lang, tok in [(args.source_lang, src_tokenizer), (args.target_lang, tgt_tokenizer)]:
-            binary_path = os.path.join(args.binary-dir, f"{split}.{lang}")
+            binary_path = os.path.join(args.binary_dir, f"{split}.{lang}")
             if not os.path.exists(binary_path):
                 continue  # skip missing splits
             output_path = os.path.join(args.output_dir, f"{split}.{lang}.txt")
