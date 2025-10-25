@@ -24,6 +24,19 @@ def get_args():
                         help="Skip decoding if output file already exists.")
     parser.add_argument("--quiet", action="store_true",
                         help="Suppress logging output.")
+    parser.add_argument("--src-vocab-size", type=int, default=32000,
+                        help="Vocabulary size for Source Language SentencePiece.")
+    parser.add_argument("--tgt-vocab-size", type=int, default=32000,
+                        help="Vocabulary size for Target Language SentencePiece.")
+    # OPTIONAL: add possibility to override default tokens
+    parser.add_argument("--eos-token", type=str,
+                        default="</s>", help="End of sentence token.")
+    parser.add_argument("--bos-token", type=str, default="<s>",
+                        help="Beginning of sentence token.")
+    parser.add_argument("--pad-token", type=str,
+                        default="<pad>", help="Padding token.")
+    parser.add_argument("--unk-token", type=str,
+                        default="<unk>", help="Unknown token.")
     return parser.parse_args()
 
 
@@ -60,11 +73,25 @@ def main():
     logging.basicConfig(level=logging.INFO)
     args = get_args()
     os.makedirs(args.output_dir, exist_ok=True)
-
     # Load tokenizers
-    src_tokenizer = BPETokenizer(language=args.source_lang)
-    tgt_tokenizer = BPETokenizer(language=args.target_lang)
-
+    src_tokenizer = BPETokenizer(
+        language=args.source_lang,
+        vocab_size=args.src_vocab_size,
+        eos=args.eos_token,
+        bos=args.bos_token,
+        pad=args.pad_token,
+        unk=args.unk_token
+    )
+    
+    tgt_tokenizer = BPETokenizer(
+        language=args.target_lang,
+        vocab_size=args.tgt_vocab_size,
+        eos=args.eos_token,
+        bos=args.bos_token,
+        pad=args.pad_token,
+        unk=args.unk_token
+    )
+    
     src_tokenizer.load(args.src_model)
     tgt_tokenizer.load(args.tgt_model)
 
@@ -79,7 +106,6 @@ def main():
                                   tok, ignore_existing=args.ignore_existing)
 
     logging.info("Decoding complete!")
-
 
 if __name__ == "__main__":
     main()
