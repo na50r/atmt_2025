@@ -188,34 +188,75 @@ class MultiHeadedAttention(nn.Module):
         self.linear = nn.Linear(dim_embed, dim_embed)
         self.dropout = nn.Dropout(dropout)
 
+    # def forward(self, x_query, x_key, x_value, mask=None):
+    #     nbatch = x_query.size(0) # get batch size
+    #     # 1) Linear projections to get the multi-head query, key and value tensors
+    #     # x_query, x_key, x_value dimension: nbatch * seq_len * dim_embed
+    #     # LHS query, key, value dimensions: nbatch * h * seq_len * d_k
+    #     query = self.WQ(x_query).view(nbatch, -1, self.h, self.d_k).transpose(1,2)
+    #     key   = self.WK(x_key).view(nbatch, -1, self.h, self.d_k).transpose(1,2)
+    #     value = self.WV(x_value).view(nbatch, -1, self.h, self.d_k).transpose(1,2)
+    #     # 2) Attention
+    #     # scores has dimensions: nbatch * h * seq_len * seq_len
+    #     scores = torch.matmul(query, key.transpose(-2, -1))/math.sqrt(self.d_k)
+    #     # 3) Mask out padding tokens and future tokens
+    #     if mask is not None:
+    #         mask.unsqueeze(dim=1)
+
+    #         scores = scores.masked_fill(mask, float('-inf'))
+    #     # p_atten dimensions: nbatch * h * seq_len * seq_len
+    #     p_atten = torch.nn.functional.softmax(scores, dim=-1) # attention filter
+    #     p_atten = self.dropout(p_atten)
+    #     # x dimensions: nbatch * h * seq_len * d_k
+    #     # print("query shape:", query.shape)
+    #     # print("key shape:", key.shape)
+    #     # print("value shape:", value.shape)
+    #     # print("p_atten shape:", p_atten.shape)
+    #     x = torch.matmul(p_atten, value)  # filtered values
+    #     # x now has dimensions:nbatch * seq_len * dim_embed
+    #     x = x.transpose(1, 2).contiguous().view(nbatch, -1, self.dim_embed)
+    #     return self.linear(x) # final linear layer
+
     def forward(self, x_query, x_key, x_value, mask=None):
-        nbatch = x_query.size(0) # get batch size
+        nbatch = x_query.size(0)  # get batch size
         # 1) Linear projections to get the multi-head query, key and value tensors
         # x_query, x_key, x_value dimension: nbatch * seq_len * dim_embed
         # LHS query, key, value dimensions: nbatch * h * seq_len * d_k
-        query = self.WQ(x_query).view(nbatch, -1, self.h, self.d_k).transpose(1,2)
-        key   = self.WK(x_key).view(nbatch, -1, self.h, self.d_k).transpose(1,2)
-        value = self.WV(x_value).view(nbatch, -1, self.h, self.d_k).transpose(1,2)
+        query = self.WQ(x_query).view(
+            nbatch, -1, self.h, self.d_k).transpose(1, 2)
+        key = self.WK(x_key).view(nbatch, -1, self.h, self.d_k).transpose(1, 2)
+        value = self.WV(x_value).view(
+            nbatch, -1, self.h, self.d_k).transpose(1, 2)
+        
+        # Modification for Multi-Query Attention
+        # Goal: We need to use the same keys and values
+        # Implement: Use only one key and value matrix instead of h!
+        # Asked ChatGPT to understand how to get only one!
+        # Take the first tensor in that number_of_heads dimension
+        # 1.5 Multi-Query Attention: Use same key & value
+        key_single = key[:, :1, :, :]
+        value_single = value[:, :1, :, :]
         # 2) Attention
         # scores has dimensions: nbatch * h * seq_len * seq_len
-        scores = torch.matmul(query, key.transpose(-2, -1))/math.sqrt(self.d_k)
+        scores = torch.matmul(query, key_single.transpose(-2, -1))/math.sqrt(self.d_k)
         # 3) Mask out padding tokens and future tokens
         if mask is not None:
             mask.unsqueeze(dim=1)
 
             scores = scores.masked_fill(mask, float('-inf'))
         # p_atten dimensions: nbatch * h * seq_len * seq_len
-        p_atten = torch.nn.functional.softmax(scores, dim=-1) # attention filter
+        p_atten = torch.nn.functional.softmax(
+            scores, dim=-1)  # attention filter
         p_atten = self.dropout(p_atten)
         # x dimensions: nbatch * h * seq_len * d_k
         # print("query shape:", query.shape)
         # print("key shape:", key.shape)
         # print("value shape:", value.shape)
         # print("p_atten shape:", p_atten.shape)
-        x = torch.matmul(p_atten, value)  # filtered values
+        x = torch.matmul(p_atten, value_single)  # filtered values
         # x now has dimensions:nbatch * seq_len * dim_embed
         x = x.transpose(1, 2).contiguous().view(nbatch, -1, self.dim_embed)
-        return self.linear(x) # final linear layer
+        return self.linear(x)  # final linear layer
 
 class ResidualConnection(nn.Module):
     def __init__(self, dim, dropout):
