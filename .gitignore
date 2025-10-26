@@ -29,6 +29,7 @@ cz-en/data
 cz-en/tokenizers
 cz-en/checkpoints
 ep-sk-en-test/
+cz-en_v2/
 
 # unused
 seq2seq/embedding_saver.py
