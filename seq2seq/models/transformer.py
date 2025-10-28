@@ -234,8 +234,9 @@ class MultiHeadedAttention(nn.Module):
         # Asked ChatGPT to understand how to get only one!
         # Take the first tensor in that number_of_heads dimension
         # 1.5 Multi-Query Attention: Use same key & value
-        key_single = key[:, :1, :, :]
-        value_single = value[:, :1, :, :]
+        # Based on paper, we take the 'mean pool' of keys and values: https://aclanthology.org/2023.emnlp-main.298.pdf (Figure 1)
+        key_single = torch.mean(key, dim=1, keepdim=True)
+        value_single = torch.mean(value, dim=1, keepdim=True)
         # 2) Attention
         # scores has dimensions: nbatch * h * seq_len * seq_len
         scores = torch.matmul(query, key_single.transpose(-2, -1))/math.sqrt(self.d_k)
