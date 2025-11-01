@@ -22,7 +22,7 @@ def beam_search(prediction, k=10):
             new_indices[n2, :, :-1] = indices[n2][idx_begin[n2]]
             new_indices[n2, :, -1] = idx_concat[n2]
         indices = new_indices
-    return indices
+    return indices, log_prob
 
 def decode_beam_search(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_mask: torch.Tensor, max_out_len: int,
            tgt_tokenizer: spm.SentencePieceProcessor, args, device: torch.device, beam_width: int = 5):
