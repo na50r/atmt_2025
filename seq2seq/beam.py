@@ -104,6 +104,7 @@ def decode_beam_search(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_ma
                        alpha=0.0):
     """
     Decodes sequences using beam search.
+    Made by ChatGPT :)
     """
     batch_size = src_tokens.size(0)
     BOS = tgt_tokenizer.bos_id()
