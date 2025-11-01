@@ -19,9 +19,12 @@ class BeamSearch:
         self.nodes.put((score, next(self._counter), node))
 
     def add_final(self, score, node):
+        """Adds a beam search path that ended in EOS"""
         missing = self.max_len - node.length
-        node.sequence = torch.cat(
-            (node.sequence.cpu(), torch.tensor([self.pad]*missing).long()))
+        if missing > 0:
+            pad_tensor = torch.full((1, missing), self.pad,
+                                    dtype=node.sequence.dtype)
+            node.sequence = torch.cat((node.sequence.cpu(), pad_tensor), dim=1)
         self.final.put((score, next(self._counter), node))
 
     def get_current_beams(self):
