@@ -2,13 +2,13 @@ from seq2seq.data.dataset import Seq2SeqDataset, BatchSampler
 from seq2seq import models, utils
 from seq2seq.data.tokenizer import BPETokenizer
 from seq2seq.decode import decode
-from seq2seq.beam import decode_beam_search
 import os
 import logging
 import argparse
 import time
 import numpy as np
 import sacrebleu
+from seq2seq.beam import BeamSearch, BeamSearchNode
 from tqdm import tqdm
 
 import torch
@@ -108,6 +108,7 @@ def main(args):
     PAD = src_tokenizer.pad_id()
     BOS = tgt_tokenizer.bos_id()
     EOS = tgt_tokenizer.eos_id()
+    UNK = tgt_tokenizer.unk_id()
     print(f'PAD ID: {PAD}, BOS ID: {BOS}, EOS ID: {EOS}\n\
           PAD token: "{src_tokenizer.IdToPiece(PAD)}", BOS token: "{tgt_tokenizer.IdToPiece(BOS)}", EOS token: "{tgt_tokenizer.IdToPiece(EOS)}"')
 
@@ -142,69 +143,181 @@ def main(args):
     make_batch = utils.make_batch_input(
         device=DEVICE, pad=src_tokenizer.pad_id(), max_seq_len=args.max_len)
 
-    # ------------------------------------------
-    # Translation loop (batched)
-    for batch in tqdm(batch_iter(src_encoded, args.batch_size)):
+    progress_bar = tqdm(batch_iter(src_encoded, args.batch_size))
+    PAD = src_tokenizer.pad_id()
+    BOS = tgt_tokenizer.bos_id()
+    EOS = tgt_tokenizer.eos_id()
+
+    # Iterate over the test set
+    all_hyps = {}
+    for i, sample in enumerate(progress_bar):
+
+        # Create a beam search object or every input sentence in batch
+        batch_size = sample['src_tokens'].shape[0]
+        searches = [BeamSearch(
+            args.beam_size, args.max_len - 1, UNK) for i in range(batch_size)]
+
         with torch.no_grad():
-            # Pad the batch to the same length
-            batch_lengths = [len(x) for x in batch]
-            max_len = max(batch_lengths)
-            batch_padded = [
-                torch.cat([x, torch.full((max_len - len(x),), PAD,
-                          dtype=torch.long)]) if len(x) < max_len else x
-                for x in batch
-            ]
-            src_tokens = torch.stack(batch_padded).to(DEVICE)
+            # Compute the encoder output
+            encoder_out = model.encoder(
+                sample['src_tokens'], sample['src_lengths'])
+            # __QUESTION 1: What is "go_slice" used for and what do its dimensions represent?
+            go_slice = \
+                torch.ones(sample['src_tokens'].shape[0], 1).fill_(
+                    EOS).type_as(sample['src_tokens'])
+            if args.cuda:
+                go_slice = utils.move_to_cuda(go_slice)
 
-            # Create a dummy target tensor (all PADs, same shape as src_tokens)
-            dummy_y = torch.full_like(
-                src_tokens, fill_value=src_tokenizer.pad_id())
+            # import pdb;pdb.set_trace()
 
-            # Use make_batch to get masks (trg_in, trg_out are not used for inference)
-            src_tokens, trg_in, trg_out, src_pad_mask, trg_pad_mask = make_batch(
-                src_tokens, dummy_y)
+            # Compute the decoder output at the first time step
+            decoder_out, _ = model.decoder(go_slice, encoder_out)
 
-            # -----------------------------------------
-            # Decode without teacher forcing
-            prediction = decode_beam_search(model=model,
-                                src_tokens=src_tokens,
-                                src_pad_mask=src_pad_mask,
-                                max_out_len=args.max_len,
-                                tgt_tokenizer=tgt_tokenizer,
-                                args=args,
-                                device=DEVICE)
-            # ----------------------------------------
+            # __QUESTION 2: Why do we keep one top candidate more than the beam size?
+            log_probs, next_candidates = torch.topk(torch.log(torch.softmax(decoder_out, dim=2)),
+                                                    args.beam_size+1, dim=-1)
 
-        # Remove BOS and decode each sentence
-        for sent in prediction:
-            translation = decode_sentence(tgt_tokenizer, sent)
-            translations.append(translation)
-            if args.output is not None:
-                with open(args.output, 'a', encoding="utf-8") as out_file:
-                    out_file.write(translation + '\n')
-    # ------------------------------------------
-    print(f"translations: {translations}")
-    logging.info(f'Wrote {len(translations)} lines to {args.output}')
-    end_time = time.perf_counter()
-    logging.info(
-        f'Translation completed in {end_time - start_time:.2f} seconds')
+        #  Create number of beam_size beam search nodes for every input sentence
+        for i in range(batch_size):
+            for j in range(args.beam_size):
+                best_candidate = next_candidates[i, :, j]
+                backoff_candidate = next_candidates[i, :, j+1]
+                best_log_p = log_probs[i, :, j]
+                backoff_log_p = log_probs[i, :, j+1]
+                next_word = torch.where(
+                    best_candidate == UNK, backoff_candidate, best_candidate)
+                log_p = torch.where(
+                    best_candidate == UNK, backoff_log_p, best_log_p)
+                log_p = log_p[-1]
 
-    # Compute BLEU score if requested
-    if getattr(args, 'bleu', False):
-        with open(args.reference, encoding='utf-8') as ref_file:
-            references = [line.strip() for line in ref_file if line.strip()]
-        if len(references) != len(translations):
-            raise ValueError(
-                f"Reference ({len(references)}) and hypothesis ({len(translations)}) line counts do not match.")
-        bleu = sacrebleu.corpus_bleu(translations, [references])
-        print(f"BLEU score: {bleu.score:.2f}")
+                # Store the encoder_out information for the current input sentence and beam
+                emb = encoder_out['src_embeddings'][:, i, :]
+                lstm_out = encoder_out['src_out'][0][:, i, :]
+                final_hidden = encoder_out['src_out'][1][:, i, :]
+                final_cell = encoder_out['src_out'][2][:, i, :]
+                try:
+                    mask = encoder_out['src_mask'][i, :]
+                except TypeError:
+                    mask = None
+
+                node = BeamSearchNode(searches[i], emb, lstm_out, final_hidden, final_cell,
+                                      mask, torch.cat((go_slice[i], next_word)), log_p, 1)
+                # __QUESTION 3: Why do we add the node with a negative score?
+                searches[i].add(-node.eval(args.alpha), node)
+
+        # import pdb;pdb.set_trace()
+        # Start generating further tokens until max sentence length reached
+        for _ in range(args.max_len-1):
+
+            # Get the current nodes to expand
+            nodes = [n[1] for s in searches for n in s.get_current_beams()]
+            if nodes == []:
+                break  # All beams ended in EOS
+
+            # Reconstruct prev_words, encoder_out from current beam search nodes
+            prev_words = torch.stack([node.sequence for node in nodes])
+            encoder_out["src_embeddings"] = torch.stack(
+                [node.emb for node in nodes], dim=1)
+            lstm_out = torch.stack([node.lstm_out for node in nodes], dim=1)
+            final_hidden = torch.stack(
+                [node.final_hidden for node in nodes], dim=1)
+            final_cell = torch.stack(
+                [node.final_cell for node in nodes], dim=1)
+            encoder_out["src_out"] = (lstm_out, final_hidden, final_cell)
+            try:
+                encoder_out["src_mask"] = torch.stack(
+                    [node.mask for node in nodes], dim=0)
+            except TypeError:
+                encoder_out["src_mask"] = None
+
+            with torch.no_grad():
+                # Compute the decoder output by feeding it the decoded sentence prefix
+                decoder_out, _ = model.decoder(prev_words, encoder_out)
+
+            # see __QUESTION 2
+            log_probs, next_candidates = torch.topk(
+                torch.log(torch.softmax(decoder_out, dim=2)), args.beam_size+1, dim=-1)
+
+            #  Create number of beam_size next nodes for every current node
+            for i in range(log_probs.shape[0]):
+                for j in range(args.beam_size):
+
+                    best_candidate = next_candidates[i, :, j]
+                    backoff_candidate = next_candidates[i, :, j+1]
+                    best_log_p = log_probs[i, :, j]
+                    backoff_log_p = log_probs[i, :, j+1]
+                    next_word = torch.where(
+                        best_candidate == UNK, backoff_candidate, best_candidate)
+                    log_p = torch.where(
+                        best_candidate == UNK, backoff_log_p, best_log_p)
+                    log_p = log_p[-1]
+                    next_word = torch.cat((prev_words[i][1:], next_word[-1:]))
+
+                    # Get parent node and beam search object for corresponding sentence
+                    node = nodes[i]
+                    search = node.search
+
+                    # __QUESTION 4: How are "add" and "add_final" different?
+                    # What would happen if we did not make this distinction?
+
+                    # Store the node as final if EOS is generated
+                    if next_word[-1] == EOS:
+                        node = BeamSearchNode(
+                            search, node.emb, node.lstm_out, node.final_hidden,
+                            node.final_cell, node.mask, torch.cat((prev_words[i][0].view([1]),
+                                                                   next_word)), node.logp, node.length
+                        )
+                        search.add_final(-node.eval(args.alpha), node)
+
+                    # Add the node to current nodes for next iteration
+                    else:
+                        node = BeamSearchNode(
+                            search, node.emb, node.lstm_out, node.final_hidden,
+                            node.final_cell, node.mask, torch.cat((prev_words[i][0].view([1]),
+                                                                   next_word)), node.logp + log_p, node.length + 1
+                        )
+                        search.add(-node.eval(args.alpha), node)
+
+            # #import pdb;pdb.set_trace()
+            # __QUESTION 5: What happens internally when we prune our beams?
+            # How do we know we always maintain the best sequences?
+            for search in searches:
+                search.prune()
+
+        # Segment into sentences
+        best_sents = torch.stack(
+            [search.get_best()[1].sequence[1:].cpu() for search in searches])
+        decoded_batch = best_sents.numpy()
+        # import pdb;pdb.set_trace()
+
+        output_sentences = [decoded_batch[row, :]
+                            for row in range(decoded_batch.shape[0])]
+
+        # __QUESTION 6: What is the purpose of this for loop?
+        temp = list()
+        for sent in output_sentences:
+            first_eos = np.where(sent == EOS)[0]
+            if len(first_eos) > 0:
+                temp.append(sent[:first_eos[0]])
+            else:
+                temp.append(sent)
+        output_sentences = temp
+
+        # Convert arrays of indices into strings of words
+        output_sentences = [decode_sentence(
+            tgt_tokenizer, sent) for sent in output_sentences]
+        output_sentences = [postprocess_ids(sent) for sent in output_sentences]
+
+        for ii, sent in enumerate(output_sentences):
+            all_hyps[int(sample['id'].data[ii])] = sent
+
+    # Write to file
+    if args.output is not None:
+        with open(args.output, 'w') as out_file:
+            for sent_id in range(len(all_hyps.keys())):
+                out_file.write(all_hyps[sent_id] + '\n')
 
 
 if __name__ == '__main__':
     args = get_args()
-    # make sure --reference is provided if --bleu is set
-    if getattr(args, 'bleu', False):
-        if not args.reference:
-            raise ValueError("You must provide --reference when using --bleu.")
-
     main(args)
