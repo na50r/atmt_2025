@@ -22,6 +22,10 @@ class SinusoidPositionalEncoding(nn.Module):
     def forward(self, x):
         return x + self.pe[:, :x.size(1)]
 
+    # Ensure compatibility with other parts of the code
+    def size(self, x):
+        return self.pe.size(x)
+
 
 @register_model('transformer')
 class TransformerModel(Seq2SeqModel):
