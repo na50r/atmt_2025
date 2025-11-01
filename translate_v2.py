@@ -1,7 +1,7 @@
 from seq2seq.data.dataset import Seq2SeqDataset, BatchSampler
 from seq2seq import models, utils
 from seq2seq.data.tokenizer import BPETokenizer
-from seq2seq.decode import decode
+from seq2seq.decode import decode, decode_beam_search
 import os
 import logging
 import argparse
@@ -9,7 +9,6 @@ import time
 import numpy as np
 import sacrebleu
 from tqdm import tqdm
-from seq2seq.models.vibes import decode_beam_search
 
 import torch
 import sentencepiece as spm
