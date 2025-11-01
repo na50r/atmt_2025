@@ -5,7 +5,7 @@
 #SBATCH --mem=16GB
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus=1
-#SBATCH --output=out_assignment3_attempt.out
+#SBATCH --output=out_assignment3_attempt2.out
 
 module load gpu
 module load mamba
@@ -18,29 +18,29 @@ python preprocess.py \
     --source-lang cz \
     --target-lang en \
     --raw-data ~/shares/cz-en/data/raw \
-    --dest-dir ./cz-en-a3-a1/data/prepared \
-    --model-dir ./cz-en-a3-a1/tokenizers \
+    --dest-dir ./cz-en-a3-a2/data/prepared \
+    --model-dir ./cz-en-a3-a2/tokenizers \
     --test-prefix test \
     --train-prefix train \
     --valid-prefix valid \
     --src-vocab-size 8000 \
     --tgt-vocab-size 8000 \
-    --src-model ./cz-en-a3-a1/tokenizers/cz-bpe-8000.model \
-    --tgt-model ./cz-en-a3-a1/tokenizers/en-bpe-8000.model
+    --src-model ./cz-en-a3-a2/tokenizers/cz-bpe-8000.model \
+    --tgt-model ./cz-en-a3-a2/tokenizers/en-bpe-8000.model
 
 # TRAIN
 python train.py \
     --cuda \
-    --data cz-en-a3-a1/data/prepared/ \
-    --src-tokenizer cz-en-a3-a1/tokenizers/cz-bpe-8000.model \
-    --tgt-tokenizer cz-en-a3-a1/tokenizers/en-bpe-8000.model \
+    --data cz-en-a3-a2/data/prepared/ \
+    --src-tokenizer cz-en-a3-a2/tokenizers/cz-bpe-8000.model \
+    --tgt-tokenizer cz-en-a3-a2/tokenizers/en-bpe-8000.model \
     --source-lang cz \
     --target-lang en \
     --batch-size 64 \
     --arch transformer \
     --max-epoch 7 \
-    --log-file cz-en-a3-a1/logs/train.log \
-    --save-dir cz-en-a3-a1/checkpoints/ \
+    --log-file cz-en-a3-a2/logs/train.log \
+    --save-dir cz-en-a3-a2/checkpoints/ \
     --ignore-checkpoints \
     --encoder-dropout 0.1 \
     --decoder-dropout 0.1 \
@@ -56,10 +56,10 @@ python train.py \
 python translate.py \
     --cuda \
     --input ~/shares/cz-en/data/raw/test.cz \
-    --src-tokenizer cz-en-a3-a1/tokenizers/cz-bpe-8000.model \
-    --tgt-tokenizer cz-en-a3-a1/tokenizers/en-bpe-8000.model \
-    --checkpoint-path cz-en-a3-a1/checkpoints/checkpoint_best.pt \
-    --output cz-en-a3-a1/output.txt \
+    --src-tokenizer cz-en-a3-a2/tokenizers/cz-bpe-8000.model \
+    --tgt-tokenizer cz-en-a3-a2/tokenizers/en-bpe-8000.model \
+    --checkpoint-path cz-en-a3-a2/checkpoints/checkpoint_best.pt \
+    --output cz-en-a3-a2/output.txt \
     --max-len 300 \
     --bleu \
     --reference ~/shares/cz-en/data/raw/test.en \

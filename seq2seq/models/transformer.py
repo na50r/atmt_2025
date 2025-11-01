@@ -7,6 +7,20 @@ from seq2seq.models import Seq2SeqModel, Seq2SeqEncoder, Seq2SeqDecoder
 import sentencepiece as spm
 
 
+class SinusoidPositionalEncoding(nn.Module):
+    # Source: https://medium.com/@uzbrainai/transformers-and-sequence-order-sinusoidal-vs-learned-positional-embeddings-b3802df5ce24
+    def __init__(self, token_dim, max_len=5000):
+        super().__init__()
+        pe = torch.zeros(max_len, token_dim)
+        position = torch.arange(0, max_len).unsqueeze(1).float()
+        div_term = torch.exp(torch.arange(
+            0, token_dim, 2).float() * -(math.log(10000.0) / token_dim))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        self.register_buffer("pe", pe.unsqueeze(0))
+
+    def forward(self, x):
+        return x + self.pe[:, :x.size(1)]
 
 
 @register_model('transformer')
@@ -91,14 +105,14 @@ class TransformerEncoder(Seq2SeqEncoder):
         
         self.dim_embed = dim_embed  # 512
         self.tok_embed = nn.Embedding(self.src_vocab_size, dim_embed)  # Vocab Dictionary size , Embed size
-        self.pos_embed = nn.Parameter(torch.zeros(1, max_seq_len, dim_embed))
+        self.pos_embed = SinusoidPositionalEncoding(dim_embed, max_seq_len)
         self.encoder_blocks = nn.ModuleList([EncoderBlock(dim_embed, dropout, n_attention_heads, dim_ff) for _ in range(n_encoder_layers)])
         self.dropout = nn.Dropout(dropout)
         self.norm = nn.RMSNorm(dim_embed)
 
     def forward(self, input, mask=None):
         x = self.tok_embed(input) # Vectors
-        x_pos = self.pos_embed[:, :x.size(1), :]  # Vectors'
+        x_pos = self.pos_embed(x)  # Vectors'
         x = self.dropout(x + x_pos) # update vectors with position information
         for layer in self.encoder_blocks:
             x = layer(x, mask) # (50,512)
@@ -142,10 +156,11 @@ class TransformerDecoder(Seq2SeqDecoder):
                  pretrained_embedding,
                  use_cuda: bool):
         super().__init__(tgt_tokenizer)
+        self.max_seq_len = max_seq_len
         self.tgt_vocab_size = tgt_tokenizer.GetPieceSize()
         self.dim_embed = dim_embed
         self.tok_embed = nn.Embedding(self.tgt_vocab_size, dim_embed)
-        self.pos_embed = nn.Parameter(torch.zeros(1, max_seq_len, dim_embed))
+        self.pos_embed = SinusoidPositionalEncoding(dim_embed, max_seq_len)
         self.dropout = nn.Dropout(dropout)
         self.decoder_blocks = nn.ModuleList([DecoderBlock( dim_embed, n_attention_heads, dropout, dim_ff ) for _ in range(n_decoder_layers)])
         self.norm = nn.RMSNorm(dim_embed)
@@ -159,14 +174,15 @@ class TransformerDecoder(Seq2SeqDecoder):
 
     def forward(self, encoder_out: torch.Tensor, src_mask: torch.Tensor, trg: torch.Tensor, trg_pad_mask: torch.Tensor):
         # Truncate trg to the maximum length in the batch
-        max_len = self.pos_embed.size(1)  # should be 300
+        max_len = self.max_seq_len  # should be 300
         if trg.size(1) > max_len:
             trg = trg[:, :max_len]
             trg_pad_mask = trg_pad_mask[:, :, :max_len]  # keep masks aligned
 
         seq_len = trg.size(1)
         trg_mask = torch.logical_or(trg_pad_mask, self.future_mask(seq_len))
-        x = self.tok_embed(trg) + self.pos_embed[:, :trg.size(1), :]
+        x = self.tok_embed(trg)
+        x = self.pos_embed(x)
         x = self.dropout(x)
         for layer in self.decoder_blocks:
             x = layer(encoder_out, src_mask, x, trg_mask)
@@ -188,76 +204,34 @@ class MultiHeadedAttention(nn.Module):
         self.linear = nn.Linear(dim_embed, dim_embed)
         self.dropout = nn.Dropout(dropout)
 
-    # def forward(self, x_query, x_key, x_value, mask=None):
-    #     nbatch = x_query.size(0) # get batch size
-    #     # 1) Linear projections to get the multi-head query, key and value tensors
-    #     # x_query, x_key, x_value dimension: nbatch * seq_len * dim_embed
-    #     # LHS query, key, value dimensions: nbatch * h * seq_len * d_k
-    #     query = self.WQ(x_query).view(nbatch, -1, self.h, self.d_k).transpose(1,2)
-    #     key   = self.WK(x_key).view(nbatch, -1, self.h, self.d_k).transpose(1,2)
-    #     value = self.WV(x_value).view(nbatch, -1, self.h, self.d_k).transpose(1,2)
-    #     # 2) Attention
-    #     # scores has dimensions: nbatch * h * seq_len * seq_len
-    #     scores = torch.matmul(query, key.transpose(-2, -1))/math.sqrt(self.d_k)
-    #     # 3) Mask out padding tokens and future tokens
-    #     if mask is not None:
-    #         mask.unsqueeze(dim=1)
-
-    #         scores = scores.masked_fill(mask, float('-inf'))
-    #     # p_atten dimensions: nbatch * h * seq_len * seq_len
-    #     p_atten = torch.nn.functional.softmax(scores, dim=-1) # attention filter
-    #     p_atten = self.dropout(p_atten)
-    #     # x dimensions: nbatch * h * seq_len * d_k
-    #     # print("query shape:", query.shape)
-    #     # print("key shape:", key.shape)
-    #     # print("value shape:", value.shape)
-    #     # print("p_atten shape:", p_atten.shape)
-    #     x = torch.matmul(p_atten, value)  # filtered values
-    #     # x now has dimensions:nbatch * seq_len * dim_embed
-    #     x = x.transpose(1, 2).contiguous().view(nbatch, -1, self.dim_embed)
-    #     return self.linear(x) # final linear layer
-
     def forward(self, x_query, x_key, x_value, mask=None):
-        nbatch = x_query.size(0)  # get batch size
+        nbatch = x_query.size(0) # get batch size
         # 1) Linear projections to get the multi-head query, key and value tensors
         # x_query, x_key, x_value dimension: nbatch * seq_len * dim_embed
         # LHS query, key, value dimensions: nbatch * h * seq_len * d_k
-        query = self.WQ(x_query).view(
-            nbatch, -1, self.h, self.d_k).transpose(1, 2)
-        key = self.WK(x_key).view(nbatch, -1, self.h, self.d_k).transpose(1, 2)
-        value = self.WV(x_value).view(
-            nbatch, -1, self.h, self.d_k).transpose(1, 2)
-        
-        # Modification for Multi-Query Attention
-        # Goal: We need to use the same keys and values
-        # Implement: Use only one key and value matrix instead of h!
-        # Asked ChatGPT to understand how to get only one!
-        # Take the first tensor in that number_of_heads dimension
-        # 1.5 Multi-Query Attention: Use same key & value
-        # Based on paper, we take the 'mean pool' of keys and values: https://aclanthology.org/2023.emnlp-main.298.pdf (Figure 1)
-        key_single = torch.mean(key, dim=1, keepdim=True)
-        value_single = torch.mean(value, dim=1, keepdim=True)
+        query = self.WQ(x_query).view(nbatch, -1, self.h, self.d_k).transpose(1,2)
+        key   = self.WK(x_key).view(nbatch, -1, self.h, self.d_k).transpose(1,2)
+        value = self.WV(x_value).view(nbatch, -1, self.h, self.d_k).transpose(1,2)
         # 2) Attention
         # scores has dimensions: nbatch * h * seq_len * seq_len
-        scores = torch.matmul(query, key_single.transpose(-2, -1))/math.sqrt(self.d_k)
+        scores = torch.matmul(query, key.transpose(-2, -1))/math.sqrt(self.d_k)
         # 3) Mask out padding tokens and future tokens
         if mask is not None:
             mask.unsqueeze(dim=1)
 
             scores = scores.masked_fill(mask, float('-inf'))
         # p_atten dimensions: nbatch * h * seq_len * seq_len
-        p_atten = torch.nn.functional.softmax(
-            scores, dim=-1)  # attention filter
+        p_atten = torch.nn.functional.softmax(scores, dim=-1) # attention filter
         p_atten = self.dropout(p_atten)
         # x dimensions: nbatch * h * seq_len * d_k
         # print("query shape:", query.shape)
         # print("key shape:", key.shape)
         # print("value shape:", value.shape)
         # print("p_atten shape:", p_atten.shape)
-        x = torch.matmul(p_atten, value_single)  # filtered values
+        x = torch.matmul(p_atten, value)  # filtered values
         # x now has dimensions:nbatch * seq_len * dim_embed
         x = x.transpose(1, 2).contiguous().view(nbatch, -1, self.dim_embed)
-        return self.linear(x)  # final linear layer
+        return self.linear(x) # final linear layer
 
 class ResidualConnection(nn.Module):
     def __init__(self, dim, dropout):
