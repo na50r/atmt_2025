@@ -15,9 +15,11 @@ export XLA_FLAGS=--xla_gpu_cuda_data_dir=$CONDA_PREFIX/pkgs/cuda-toolkit
 # TRANSLATE
 python translate.py \
     --cuda \
-    --input exp/exp.en\
+    --input exp/exp.cz\
     --src-tokenizer cz-en-a3-a1/tokenizers/cz-bpe-8000.model \
     --tgt-tokenizer cz-en-a3-a1/tokenizers/en-bpe-8000.model \
     --checkpoint-path cz-en-a3-a1/checkpoints/checkpoint_best.pt \
     --output exp/out.txt \
+    --bleu \
+    --reference exp/exp.en \
     --max-len 300 
