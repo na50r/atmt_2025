@@ -4,6 +4,7 @@ from seq2seq.models import Seq2SeqModel
 
 
 def beam_search(prediction, k=10):
+    # Source: https://stackoverflow.com/a/76661466
     batch_size, seq_length, vocab_size = prediction.shape
     log_prob, indices = prediction[:, 0, :].topk(k, sorted=True)
     indices = indices.unsqueeze(-1).to(prediction.device)  # ensure same device
