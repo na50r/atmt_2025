@@ -20,9 +20,12 @@ def decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_mask: torch.Te
         trg_pad_mask = (generated == PAD).unsqueeze(1).unsqueeze(2)  # (batch_size, 1, 1, seq_len)
         # Forward pass: use only the generated tokens so far
         output = model(src_tokens, src_pad_mask, generated, trg_pad_mask).to(device)
+        print("DEBUG", output.shape)
         # Get the logits for the last time step
         next_token_logits = output[:, -1, :]  # last time step
+        print("DEBUG", next_token_logits.shape)
         next_tokens = next_token_logits.argmax(dim=-1, keepdim=True)  # greedy
+        print("DEBUG", next_tokens.shape)
 
         # Append next token to each sequence
         generated = torch.cat([generated, next_tokens], dim=1)
