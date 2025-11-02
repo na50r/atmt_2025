@@ -7,6 +7,40 @@ from seq2seq.models import Seq2SeqModel, Seq2SeqEncoder, Seq2SeqDecoder
 import sentencepiece as spm
 
 
+class SinusoidPositionalEncoding(nn.Module):
+    # Source: https://medium.com/@uzbrainai/transformers-and-sequence-order-sinusoidal-vs-learned-positional-embeddings-b3802df5ce24
+    def __init__(self, token_dim, max_len=5000):
+        super().__init__()
+        print("Using sinusoidal positional encoding")
+        pe = torch.zeros(max_len, token_dim)
+        position = torch.arange(0, max_len).unsqueeze(1).float()
+        div_term = torch.exp(torch.arange(
+            0, token_dim, 2).float() * -(math.log(10000.0) / token_dim))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        self.register_buffer("pe", pe.unsqueeze(0))
+
+    def forward(self, x):
+        return x + self.pe[:, :x.size(1)]
+
+    # Ensure compatibility with other parts of the code
+    def size(self, x):
+        return self.pe.size(x)
+    
+
+class LearnedPositionalEncoding(nn.Module):
+    def __init__(self, token_dim, max_len=5000):
+        super().__init__()
+        print("Using learned positional encoding")
+        self.pe = nn.Parameter(torch.zeros(1, max_len, token_dim))
+
+    def forward(self, x):
+        return x + self.pe[:, :x.size(1), :]
+
+    # Ensure compatibility with other parts of the code
+    def size(self, x):
+        return self.pe.size(x)
+
 @register_model('transformer')
 class TransformerModel(Seq2SeqModel):
     def __init__(self, encoder, decoder):
@@ -43,6 +77,8 @@ class TransformerModel(Seq2SeqModel):
                             default=6, help='number of decoder layers')
         parser.add_argument('--attention-type', type=str, default='mha',
                             help='specify attention type, mha or mqa')
+        parser.add_argument('--pos-enc', type=str, default='learned',
+                            help='specify positional embedding type, learned or sinusoid')
         
     @classmethod
     def build_model(cls, args, src_tokenizer, tgt_tokenizer):
@@ -66,7 +102,8 @@ class TransformerModel(Seq2SeqModel):
             dim_ff=args.dim_feedforward_encoder,
             pretrained_embedding=encoder_pretrained_embedding, # currently unused
             n_encoder_layers=args.n_encoder_layers,
-            attn_type=args.attention_type
+            attn_type=args.attention_type,
+            pos_enc=args.pos_enc
         )
         decoder = TransformerDecoder(
             tgt_tokenizer=tgt_tokenizer,
@@ -78,7 +115,8 @@ class TransformerModel(Seq2SeqModel):
             dim_ff=args.dim_feedforward_decoder,
             pretrained_embedding=decoder_pretrained_embedding, # currently unused
             use_cuda=args.cuda,
-            attn_type=args.attention_type
+            attn_type=args.attention_type,
+            pos_enc=args.pos_enc
         )
         return cls(encoder, decoder)
 
@@ -97,7 +135,8 @@ class TransformerEncoder(Seq2SeqEncoder):
                  dim_ff,
                  pretrained_embedding,
                  n_encoder_layers,
-                 attn_type='mha'
+                 attn_type='mha',
+                 pos_enc='learned'
                  ):
         # initialize parent (but since our implementation uses a )
         super().__init__(src_tokenizer)
@@ -105,16 +144,19 @@ class TransformerEncoder(Seq2SeqEncoder):
         self.src_vocab_size = src_tokenizer.GetPieceSize()
         
         self.dim_embed = dim_embed  # 512
-        self.tok_embed = nn.Embedding(self.src_vocab_size, dim_embed)  # Vocab Dictionary size , Embed size
-        self.pos_embed = nn.Parameter(torch.zeros(1, max_seq_len, dim_embed))
+        self.tok_embed = nn.Embedding(self.src_vocab_size, dim_embed)  # Vocab Dictionary size , Embed 
+        if pos_enc == 'sinusoid':
+            self.pos_embed = SinusoidPositionalEncoding(dim_embed, max_seq_len)
+        elif pos_enc == 'learned':
+            self.pos_embed = LearnedPositionalEncoding(dim_embed, max_seq_len)
         self.encoder_blocks = nn.ModuleList([EncoderBlock(dim_embed, dropout, n_attention_heads, dim_ff, attn_type) for _ in range(n_encoder_layers)])
         self.dropout = nn.Dropout(dropout)
         self.norm = nn.RMSNorm(dim_embed)
 
     def forward(self, input, mask=None):
         x = self.tok_embed(input) # Vectors
-        x_pos = self.pos_embed[:, :x.size(1), :]  # Vectors'
-        x = self.dropout(x + x_pos) # update vectors with position information
+        x = self.pos_embed(x)
+        x = self.dropout(x) # update vectors with position information
         for layer in self.encoder_blocks:
             x = layer(x, mask) # (50,512)
         
@@ -159,13 +201,17 @@ class TransformerDecoder(Seq2SeqDecoder):
                 #  unused for now
                  pretrained_embedding,
                  use_cuda: bool,
-                 attn_type='mha'
+                 attn_type='mha',
+                 pos_enc='learned'
                  ):
         super().__init__(tgt_tokenizer)
         self.tgt_vocab_size = tgt_tokenizer.GetPieceSize()
         self.dim_embed = dim_embed
         self.tok_embed = nn.Embedding(self.tgt_vocab_size, dim_embed)
-        self.pos_embed = nn.Parameter(torch.zeros(1, max_seq_len, dim_embed))
+        if pos_enc == 'sinusoid':
+            self.pos_embed = SinusoidPositionalEncoding(dim_embed, max_seq_len)
+        elif pos_enc == 'learned':
+            self.pos_embed = LearnedPositionalEncoding(dim_embed, max_seq_len)
         self.dropout = nn.Dropout(dropout)
         self.decoder_blocks = nn.ModuleList([DecoderBlock( dim_embed, n_attention_heads, dropout, dim_ff, attn_type) for _ in range(n_decoder_layers)])
         self.norm = nn.RMSNorm(dim_embed)
@@ -186,7 +232,8 @@ class TransformerDecoder(Seq2SeqDecoder):
 
         seq_len = trg.size(1)
         trg_mask = torch.logical_or(trg_pad_mask, self.future_mask(seq_len))
-        x = self.tok_embed(trg) + self.pos_embed[:, :trg.size(1), :]
+        x = self.tok_embed(trg)
+        x = self.pos_embed(x)
         x = self.dropout(x)
         for layer in self.decoder_blocks:
             x = layer(encoder_out, src_mask, x, trg_mask)
