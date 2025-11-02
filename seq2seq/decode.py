@@ -10,6 +10,7 @@ def beam_search_decode(model, src_tokens, src_pad_mask, max_out_len, tgt_tokeniz
     PAD = tgt_tokenizer.pad_id()
 
     batch_size = src_tokens.size(0)
+    finished = torch.zeros(batch_size, dtype=torch.bool, device=device)
     assert batch_size == 1, "Only works for batch size 1 (for now)"
 
     # The reasoon why ChatGPT suggested separating encoder_out/decoder_out rather than using the model directly is because the student pointed out that the model essentially just uses them directly
@@ -55,7 +56,7 @@ def beam_search_decode(model, src_tokens, src_pad_mask, max_out_len, tgt_tokeniz
         # Select top beam_size sequences by cumulative log prob
         candidates = sorted(candidates, key=lambda x: x[1], reverse=True)
         beam = candidates[:beam_size]
-
+        
         if len(completed) >= beam_size:
             break
 
@@ -72,78 +73,6 @@ def beam_search_decode(model, src_tokens, src_pad_mask, max_out_len, tgt_tokeniz
         tokens = tokens[:tokens.index(EOS)+1]
     return [tokens]
 
-
-def beam_search_decode_v2(model, src_tokens, src_pad_mask, max_out_len, tgt_tokenizer, device, beam_size=5):
-    # Modified by ChatGPT to be more optimized
-    BOS = tgt_tokenizer.bos_id()
-    EOS = tgt_tokenizer.eos_id()
-    PAD = tgt_tokenizer.pad_id()
-
-    batch_size = src_tokens.size(0)
-    assert batch_size == 1, "Only batch size 1 supported."
-
-    encoder_out = model.encoder(src_tokens, src_pad_mask)
-
-    beam = [(torch.tensor([[BOS]], device=device), 0.0)]
-    completed = []
-
-    for step in range(max_out_len):
-        # Separate active and completed beams
-        active = [(s, sc) for s, sc in beam if s[0, -1] != EOS]
-        completed.extend([(s, sc) for s, sc in beam if s[0, -1] == EOS])
-
-        # If no active beams remain, stop early
-        if not active:
-            break
-
-        # Stack sequences for one decoder forward pass
-        beam_seqs = torch.cat([s for s, _ in active], dim=0)
-        trg_pad_mask = (beam_seqs == PAD).unsqueeze(1).unsqueeze(2)
-        expanded_encoder_out = encoder_out.expand(len(active), -1, -1)
-        expanded_src_pad_mask = src_pad_mask.unsqueeze(
-            1) if src_pad_mask.dim() == 2 else src_pad_mask
-        expanded_src_pad_mask = expanded_src_pad_mask.expand(len(active), -1, -1)
-
-        logits = model.decoder(
-            expanded_encoder_out,
-            expanded_src_pad_mask,
-            beam_seqs,
-            trg_pad_mask
-        )
-
-        log_probs = F.log_softmax(
-            logits[:, -1, :], dim=-1)  # (beam_active, vocab)
-
-        all_candidates = []
-        for i, (_, score) in enumerate(active):
-            topk_log_probs, topk_idx = log_probs[i].topk(beam_size)
-            for k in range(beam_size):
-                next_token = topk_idx[k].view(1, 1)
-                new_seq = torch.cat([beam_seqs[i:i+1], next_token], dim=1)
-                all_candidates.append(
-                    (new_seq, score + topk_log_probs[k].item()))
-
-        # Prune to top beam_size total (active + completed)
-        all_candidates.extend(completed)
-        all_candidates = sorted(
-            all_candidates, key=lambda x: x[1], reverse=True)
-        beam = all_candidates[:beam_size]
-
-        # Optional: stop early if we have enough completed beams
-        if len(completed) >= beam_size:
-            break
-
-    # Pick the best completed sequence
-    if completed:
-        completed = sorted(completed, key=lambda x: x[1], reverse=True)
-        best_seq, _ = completed[0]
-    else:
-        best_seq, _ = beam[0]
-
-    tokens = best_seq[0, 1:].tolist()
-    if EOS in tokens:
-        tokens = tokens[:tokens.index(EOS)+1]
-    return [tokens]
 
 def decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_mask: torch.Tensor, max_out_len: int,
            tgt_tokenizer: spm.SentencePieceProcessor, args, device: torch.device):
