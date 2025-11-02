@@ -11,7 +11,7 @@ class SinusoidPositionalEncoding(nn.Module):
     # Source: https://medium.com/@uzbrainai/transformers-and-sequence-order-sinusoidal-vs-learned-positional-embeddings-b3802df5ce24
     def __init__(self, token_dim, max_len=5000):
         super().__init__()
-        print("Using sinusoidal positional encoding")
+        print("DEBUG: Using sinusoidal positional encoding")
         pe = torch.zeros(max_len, token_dim)
         position = torch.arange(0, max_len).unsqueeze(1).float()
         div_term = torch.exp(torch.arange(
@@ -31,7 +31,7 @@ class SinusoidPositionalEncoding(nn.Module):
 class LearnedPositionalEncoding(nn.Module):
     def __init__(self, token_dim, max_len=5000):
         super().__init__()
-        print("Using learned positional encoding")
+        print("DEBUG: Using learned positional encoding")
         self.pe = nn.Parameter(torch.zeros(1, max_len, token_dim))
 
     def forward(self, x):
