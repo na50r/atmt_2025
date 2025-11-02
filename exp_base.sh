@@ -5,7 +5,7 @@
 #SBATCH --mem=16GB
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus=1
-#SBATCH --output=exp_base.out
+#SBATCH --output=exp_base_big.out
 
 module load gpu
 module load mamba
@@ -15,11 +15,11 @@ export XLA_FLAGS=--xla_gpu_cuda_data_dir=$CONDA_PREFIX/pkgs/cuda-toolkit
 # TRANSLATE
 python translate.py \
     --cuda \
-    --input exp/exp.cz \
+    --input ~/shares/cz-en/data/raw/test.cz \
     --src-tokenizer cz-en-a3-a1/tokenizers/cz-bpe-8000.model \
     --tgt-tokenizer cz-en-a3-a1/tokenizers/en-bpe-8000.model \
     --checkpoint-path cz-en-a3-a1/checkpoints/checkpoint_best.pt \
-    --output exp/output_base.txt \
+    --output exp/output_base_big.txt \
     --max-len 300 \
     --bleu \
-    --reference exp/exp.en 
+    --reference ~/shares/cz-en/data/raw/test.en \

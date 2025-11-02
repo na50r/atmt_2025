@@ -81,7 +81,7 @@ def beam_search_decode(model, src_tokens, src_pad_mask, max_out_len, tgt_tokeniz
     tokens = best_seq[0, 1:].tolist()
     if EOS in tokens:
         tokens = tokens[:tokens.index(EOS)+1]
-    return tokens
+    return [tokens]
 
 
 def decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_mask: torch.Tensor, max_out_len: int,
