@@ -5,7 +5,7 @@
 #SBATCH --mem=16GB
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus=1
-#SBATCH --output=exp_big.out
+#SBATCH --output=exp2_big.out
 
 module load gpu
 module load mamba
@@ -19,7 +19,7 @@ python translate_v3.py \
     --src-tokenizer cz-en-a3-a1/tokenizers/cz-bpe-8000.model \
     --tgt-tokenizer cz-en-a3-a1/tokenizers/en-bpe-8000.model \
     --checkpoint-path cz-en-a3-a1/checkpoints/checkpoint_best.pt \
-    --output exp/output_big.txt \
+    --output exp/output2_big.txt \
     --max-len 300 \
     --bleu \
     --reference ~/shares/cz-en/data/raw/test.en \
