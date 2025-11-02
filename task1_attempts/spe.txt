@@ -1,0 +1,10 @@
+Epoch 000: valid_loss 2.41 | num_tokens 18 | batch_size 5e+03 | valid_perplexity 11.2 | BLEU 9.277
+Epoch 001: valid_loss 2.18 | num_tokens 18 | batch_size 5e+03 | valid_perplexity 8.85 | BLEU 8.945
+Epoch 002: valid_loss 2.09 | num_tokens 18 | batch_size 5e+03 | valid_perplexity 8.06 | BLEU 12.042
+Epoch 003: valid_loss 2.02 | num_tokens 18 | batch_size 5e+03 | valid_perplexity 7.57 | BLEU 12.678
+Epoch 004: valid_loss 1.98 | num_tokens 18 | batch_size 5e+03 | valid_perplexity 7.24 | BLEU 12.960
+Epoch 005: valid_loss 1.96 | num_tokens 18 | batch_size 5e+03 | valid_perplexity 7.1 | BLEU 14.202
+Epoch 006: valid_loss 1.91 | num_tokens 18 | batch_size 5e+03 | valid_perplexity 6.76 | BLEU 15.188
+Test set results: BLEU 12.069
+Final Test Set Results: BLEU 12.07
+BLEU score: 12.01
