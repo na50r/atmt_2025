@@ -1,7 +1,7 @@
 from seq2seq.data.dataset import Seq2SeqDataset, BatchSampler
 from seq2seq import models, utils
 from seq2seq.data.tokenizer import BPETokenizer
-from seq2seq.decode import decode, decode_beam_search
+from seq2seq.decode import decode, beam_search_decode
 import os
 import logging
 import argparse
@@ -165,12 +165,11 @@ def main(args):
 
             # -----------------------------------------
             # Decode without teacher forcing
-            prediction = decode_beam_search(model=model,
+            prediction = beam_search_decode(model=model,
                                 src_tokens=src_tokens,
                                 src_pad_mask=src_pad_mask,
                                 max_out_len=args.max_len,
                                 tgt_tokenizer=tgt_tokenizer,
-                                args=args,
                                 device=DEVICE)
             # ----------------------------------------
 

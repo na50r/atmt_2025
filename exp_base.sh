@@ -13,13 +13,13 @@ source activate atmt
 export XLA_FLAGS=--xla_gpu_cuda_data_dir=$CONDA_PREFIX/pkgs/cuda-toolkit
 
 # TRANSLATE
-python translate_v2.py \
+python translate.py \
     --cuda \
-    --input ~/shares/cz-en/data/raw/test.cz \
+    --input exp/exp.cz \
     --src-tokenizer cz-en-a3-a1/tokenizers/cz-bpe-8000.model \
     --tgt-tokenizer cz-en-a3-a1/tokenizers/en-bpe-8000.model \
     --checkpoint-path cz-en-a3-a1/checkpoints/checkpoint_best.pt \
     --output exp/output_base.txt \
     --max-len 300 \
     --bleu \
-    --reference ~/shares/cz-en/data/raw/test.en 
+    --reference exp/exp.en 
