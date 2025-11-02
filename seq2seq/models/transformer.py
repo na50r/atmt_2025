@@ -7,8 +7,6 @@ from seq2seq.models import Seq2SeqModel, Seq2SeqEncoder, Seq2SeqDecoder
 import sentencepiece as spm
 
 
-
-
 @register_model('transformer')
 class TransformerModel(Seq2SeqModel):
     def __init__(self, encoder, decoder):
@@ -19,19 +17,32 @@ class TransformerModel(Seq2SeqModel):
     @staticmethod
     def add_args(parser):
         """ Add model-specific arguments to the parser. """
-        parser.add_argument('--encoder-embed-path', type=str, help='Path to pre-trained encoder embeddings')
-        parser.add_argument('--decoder-embed-path', type=str, help='Path to pre-trained decoder embeddings')
+        parser.add_argument('--encoder-embed-path', type=str,
+                            help='Path to pre-trained encoder embeddings')
+        parser.add_argument('--decoder-embed-path', type=str,
+                            help='Path to pre-trained decoder embeddings')
         # Add any additional arguments specific to the transformer model here
-        parser.add_argument('--encoder-dropout', type=float, default=0.0, help='dropout probability for encoder layers')
-        parser.add_argument('--decoder-dropout',type=float, default=0.0,help='dropout probability for decoder layers')
-        
-        parser.add_argument('--dim-embedding', type=int, default=512, help='embedding dimension for both encoder and decoder')
-        parser.add_argument('--attention-heads', type=int, default=8, help='number of attention heads')
-        parser.add_argument('--dim-feedforward-encoder', type=int, default=2048, help='dimension of feed-forward layers for encoder')
-        parser.add_argument('--dim-feedforward-decoder', type=int, default=2048, help='dimension of feed-forward layers for decoder')
-        parser.add_argument('--max-seq-len', type=int, default=128, help='maximum sequence length')
-        parser.add_argument('--n-encoder-layers', type=int, default=6, help='number of encoder layers')
-        parser.add_argument('--n-decoder-layers', type=int, default=6, help='number of decoder layers')
+        parser.add_argument('--encoder-dropout', type=float, default=0.0,
+                            help='dropout probability for encoder layers')
+        parser.add_argument('--decoder-dropout', type=float, default=0.0,
+                            help='dropout probability for decoder layers')
+
+        parser.add_argument('--dim-embedding', type=int, default=512,
+                            help='embedding dimension for both encoder and decoder')
+        parser.add_argument('--attention-heads', type=int,
+                            default=8, help='number of attention heads')
+        parser.add_argument('--dim-feedforward-encoder', type=int, default=2048,
+                            help='dimension of feed-forward layers for encoder')
+        parser.add_argument('--dim-feedforward-decoder', type=int, default=2048,
+                            help='dimension of feed-forward layers for decoder')
+        parser.add_argument('--max-seq-len', type=int,
+                            default=128, help='maximum sequence length')
+        parser.add_argument('--n-encoder-layers', type=int,
+                            default=6, help='number of encoder layers')
+        parser.add_argument('--n-decoder-layers', type=int,
+                            default=6, help='number of decoder layers')
+        parser.add_argument('--attention-type', type=str, default='mha',
+                            help='specify attention type, mha or mqa')
         
     @classmethod
     def build_model(cls, args, src_tokenizer, tgt_tokenizer):
@@ -55,6 +66,7 @@ class TransformerModel(Seq2SeqModel):
             dim_ff=args.dim_feedforward_encoder,
             pretrained_embedding=encoder_pretrained_embedding, # currently unused
             n_encoder_layers=args.n_encoder_layers,
+            attn_type=args.attention_type
         )
         decoder = TransformerDecoder(
             tgt_tokenizer=tgt_tokenizer,
@@ -65,7 +77,8 @@ class TransformerModel(Seq2SeqModel):
             n_decoder_layers=args.n_decoder_layers,
             dim_ff=args.dim_feedforward_decoder,
             pretrained_embedding=decoder_pretrained_embedding, # currently unused
-            use_cuda=args.cuda
+            use_cuda=args.cuda,
+            attn_type=args.attention_type
         )
         return cls(encoder, decoder)
 
@@ -83,7 +96,9 @@ class TransformerEncoder(Seq2SeqEncoder):
                  n_attention_heads,
                  dim_ff,
                  pretrained_embedding,
-                 n_encoder_layers):
+                 n_encoder_layers,
+                 attn_type='mha'
+                 ):
         # initialize parent (but since our implementation uses a )
         super().__init__(src_tokenizer)
 
@@ -92,7 +107,7 @@ class TransformerEncoder(Seq2SeqEncoder):
         self.dim_embed = dim_embed  # 512
         self.tok_embed = nn.Embedding(self.src_vocab_size, dim_embed)  # Vocab Dictionary size , Embed size
         self.pos_embed = nn.Parameter(torch.zeros(1, max_seq_len, dim_embed))
-        self.encoder_blocks = nn.ModuleList([EncoderBlock(dim_embed, dropout, n_attention_heads, dim_ff) for _ in range(n_encoder_layers)])
+        self.encoder_blocks = nn.ModuleList([EncoderBlock(dim_embed, dropout, n_attention_heads, dim_ff, attn_type) for _ in range(n_encoder_layers)])
         self.dropout = nn.Dropout(dropout)
         self.norm = nn.RMSNorm(dim_embed)
 
@@ -108,9 +123,12 @@ class TransformerEncoder(Seq2SeqEncoder):
 
 class EncoderBlock(nn.Module):
     '''EncoderBlock: self-attention -> position-wise fully connected feed-forward layer'''
-    def __init__(self, dim_embed, dropout, n_heads, dim_ff):
+    def __init__(self, dim_embed, dropout, n_heads, dim_ff, attn_type='mha'):
         super(EncoderBlock, self).__init__()
-        self.atten = MultiHeadedAttention(n_heads, dim_embed, dropout)
+        if attn_type == 'mha':
+            self.atten = MultiHeadedAttention(n_heads, dim_embed, dropout)
+        elif attn_type == 'mqa':
+            self.atten = MultiQueryAttention(n_heads, dim_embed, dropout)
         self.feed_forward = nn.Sequential(
             nn.Linear(dim_embed, dim_ff),
             nn.ReLU(),
@@ -140,14 +158,16 @@ class TransformerDecoder(Seq2SeqDecoder):
                  dim_ff: int,
                 #  unused for now
                  pretrained_embedding,
-                 use_cuda: bool):
+                 use_cuda: bool,
+                 attn_type='mha'
+                 ):
         super().__init__(tgt_tokenizer)
         self.tgt_vocab_size = tgt_tokenizer.GetPieceSize()
         self.dim_embed = dim_embed
         self.tok_embed = nn.Embedding(self.tgt_vocab_size, dim_embed)
         self.pos_embed = nn.Parameter(torch.zeros(1, max_seq_len, dim_embed))
         self.dropout = nn.Dropout(dropout)
-        self.decoder_blocks = nn.ModuleList([DecoderBlock( dim_embed, n_attention_heads, dropout, dim_ff ) for _ in range(n_decoder_layers)])
+        self.decoder_blocks = nn.ModuleList([DecoderBlock( dim_embed, n_attention_heads, dropout, dim_ff, attn_type) for _ in range(n_decoder_layers)])
         self.norm = nn.RMSNorm(dim_embed)
         self.linear = nn.Linear(dim_embed, self.tgt_vocab_size)
         self.device = torch.device("cuda" if use_cuda else "cpu")
@@ -179,6 +199,7 @@ class MultiHeadedAttention(nn.Module):
         super(MultiHeadedAttention, self).__init__()
         #super().__init__()  python 3.x
         assert dim_embed % n_heads == 0 # check the h number
+        print("DEBUG: Using MultiHeadedAttention")
         self.d_k = dim_embed//n_heads
         self.dim_embed = dim_embed    # 512
         self.h = n_heads  # 8
@@ -217,6 +238,60 @@ class MultiHeadedAttention(nn.Module):
         x = x.transpose(1, 2).contiguous().view(nbatch, -1, self.dim_embed)
         return self.linear(x) # final linear layer
 
+class MultiQueryAttention(nn.Module):
+    def __init__(self, n_heads: int, dim_embed: int, dropout: float = 0.0):
+        super(MultiQueryAttention, self).__init__()
+        # super().__init__()  python 3.x
+        assert dim_embed % n_heads == 0  # check the h number
+        print("DEBUG: Using MultiQueryAttention")
+        self.d_k = dim_embed//n_heads
+        self.dim_embed = dim_embed    # 512
+        self.h = n_heads  # 8
+        self.WQ = nn.Linear(dim_embed, dim_embed)
+        self.WK = nn.Linear(dim_embed, dim_embed)
+        self.WV = nn.Linear(dim_embed, dim_embed)
+        self.linear = nn.Linear(dim_embed, dim_embed)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x_query, x_key, x_value, mask=None):
+        nbatch = x_query.size(0)  # get batch size
+        # 1) Linear projections to get the multi-head query, key and value tensors
+        # x_query, x_key, x_value dimension: nbatch * seq_len * dim_embed
+        # LHS query, key, value dimensions: nbatch * h * seq_len * d_k
+        query = self.WQ(x_query).view(
+            nbatch, -1, self.h, self.d_k).transpose(1, 2)
+        key = self.WK(x_key).view(nbatch, -1, self.h, self.d_k).transpose(1, 2)
+        value = self.WV(x_value).view(
+            nbatch, -1, self.h, self.d_k).transpose(1, 2)
+
+        # Modification for Multi-Query Attention
+        # Goal: We need to use the same keys and values
+        # Implement: Use only one key and value matrix instead of h!
+        # Asked ChatGPT to understand how to get only one!
+        # Take the first tensor in that number_of_heads dimension
+        # 1.5 Multi-Query Attention: Use same key & value
+        # Based on paper, we take the 'mean pool' of keys and values: https://aclanthology.org/2023.emnlp-main.298.pdf (Figure 1)
+        key_single = torch.mean(key, dim=1, keepdim=True)
+        value_single = torch.mean(value, dim=1, keepdim=True)
+        # 2) Attention
+        # scores has dimensions: nbatch * h * seq_len * seq_len
+        scores = torch.matmul(
+            query, key_single.transpose(-2, -1))/math.sqrt(self.d_k)
+        # 3) Mask out padding tokens and future tokens
+        if mask is not None:
+            mask.unsqueeze(dim=1)
+
+            scores = scores.masked_fill(mask, float('-inf'))
+        # p_atten dimensions: nbatch * h * seq_len * seq_len
+        p_atten = torch.nn.functional.softmax(
+            scores, dim=-1)  # attention filter
+        p_atten = self.dropout(p_atten)
+        # x dimensions: nbatch * h * seq_len * d_k
+        x = torch.matmul(p_atten, value_single)  # filtered values
+        # x now has dimensions:nbatch * seq_len * dim_embed
+        x = x.transpose(1, 2).contiguous().view(nbatch, -1, self.dim_embed)
+        return self.linear(x)  # final linear layer
+
 class ResidualConnection(nn.Module):
     def __init__(self, dim, dropout):
         super().__init__()
@@ -229,10 +304,14 @@ class ResidualConnection(nn.Module):
 
 class DecoderBlock(nn.Module):
     ''' DecoderBlock: self-attention -> position-wise feed-forward (fully connected) layer'''
-    def __init__(self, dim_embed, n_heads, dropout, dim_ff):
+    def __init__(self, dim_embed, n_heads, dropout, dim_ff, attn_type='mha'):
         super().__init__()
-        self.atten1 = MultiHeadedAttention(n_heads, dim_embed)
-        self.atten2 = MultiHeadedAttention(n_heads, dim_embed)
+        if attn_type == "mqa":
+            self.atten1 = MultiQueryAttention(n_heads, dim_embed)
+            self.atten2 = MultiQueryAttention(n_heads, dim_embed)
+        else:
+            self.atten1 = MultiHeadedAttention(n_heads, dim_embed)
+            self.atten2 = MultiHeadedAttention(n_heads, dim_embed)
         self.feed_forward = nn.Sequential(
             nn.Linear(dim_embed, dim_ff),
             nn.ReLU(),
