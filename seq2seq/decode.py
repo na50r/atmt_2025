@@ -99,10 +99,14 @@ def beam_search_decode_v2(model, src_tokens, src_pad_mask, max_out_len, tgt_toke
         # Stack sequences for one decoder forward pass
         beam_seqs = torch.cat([s for s, _ in active], dim=0)
         trg_pad_mask = (beam_seqs == PAD).unsqueeze(1).unsqueeze(2)
+        expanded_encoder_out = encoder_out.expand(len(active), -1, -1)
+        expanded_src_pad_mask = src_pad_mask.unsqueeze(
+            1) if src_pad_mask.dim() == 2 else src_pad_mask
+        expanded_src_pad_mask = expanded_src_pad_mask.expand(len(active), -1, -1)
 
         logits = model.decoder(
-            encoder_out.repeat(len(active), 1, 1),
-            src_pad_mask.repeat(len(active), 1, 1),
+            expanded_encoder_out,
+            expanded_src_pad_mask,
             beam_seqs,
             trg_pad_mask
         )
