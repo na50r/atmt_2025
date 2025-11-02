@@ -20,7 +20,7 @@ python preprocess.py \
     --target-lang en \
     --raw-data ~/shares/cz-en/data/raw \
     --dest-dir ./cz-en-a3-task1-base/data/prepared \
-    --model-dir ./cz-en-a3-a1/tokenizers \
+    --model-dir ./cz-en-a3-task1-base/tokenizers \
     --test-prefix test \
     --train-prefix train \
     --valid-prefix valid \
