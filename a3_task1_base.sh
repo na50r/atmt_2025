@@ -41,7 +41,7 @@ python train.py \
     --arch transformer \
     --max-epoch 7 \
     --log-file cz-en-a3-task1-base/logs/train-base.log \
-    --save-dir cz-en-a3-task1-base/checkpoints-base/ \
+    --save-dir cz-en-a3-task1-base/checkpoints/ \
     --ignore-checkpoints \
     --encoder-dropout 0.1 \
     --decoder-dropout 0.1 \
