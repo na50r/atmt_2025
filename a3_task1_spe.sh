@@ -25,8 +25,8 @@ python train.py \
     --batch-size 64 \
     --arch transformer \
     --max-epoch 7 \
-    --log-file cz-en-a3-task1-spe/logs/train-mqa.log \
-    --save-dir cz-en-a3-task1-spe/checkpoints-mqa/ \
+    --log-file cz-en-a3-task1-spe/logs/train.log \
+    --save-dir cz-en-a3-task1-spe/checkpoints/ \
     --ignore-checkpoints \
     --encoder-dropout 0.1 \
     --decoder-dropout 0.1 \
@@ -38,12 +38,12 @@ python train.py \
     --n-encoder-layers 3 \
     --n-decoder-layers 3 \
     --pos-enc sinusoid \
-    --seed 43
+    --seed 666
 
 # TRANSLATE
 python translate.py \
     --cuda \
-    --seed 43 \
+    --seed 666 \
     --input ~/shares/cz-en/data/raw/test.cz \
     --src-tokenizer cz-en-a3-task1-base/tokenizers/cz-bpe-8000.model \
     --tgt-tokenizer cz-en-a3-task1-base/tokenizers/en-bpe-8000.model \

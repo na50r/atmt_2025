@@ -89,6 +89,7 @@ def main(args):
     """ Main training function. Trains the translation model over the course of several epochs, including dynamic
     learning rate adjustment and gradient clipping. """
     logging.info('Commencing training!')
+    print("Chosen seed:", args.seed)
     torch.manual_seed(args.seed)
 
     utils.init_logging(args)

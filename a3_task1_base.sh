@@ -40,7 +40,7 @@ python train.py \
     --batch-size 64 \
     --arch transformer \
     --max-epoch 7 \
-    --log-file cz-en-a3-task1-base/logs/train-base.log \
+    --log-file cz-en-a3-task1-base/logs/train.log \
     --save-dir cz-en-a3-task1-base/checkpoints/ \
     --ignore-checkpoints \
     --encoder-dropout 0.1 \
@@ -52,7 +52,7 @@ python train.py \
     --max-seq-len 300 \
     --n-encoder-layers 3 \
     --n-decoder-layers 3 \
-    --seed 43
+    --seed 666
 
 # TRANSLATE
 python translate.py \
@@ -65,4 +65,4 @@ python translate.py \
     --max-len 300 \
     --bleu \
     --reference ~/shares/cz-en/data/raw/test.en \
-    --seed 43
+    --seed 666
