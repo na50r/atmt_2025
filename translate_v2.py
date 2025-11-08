@@ -43,6 +43,7 @@ def get_args():
     # BLEU computation arguments
     parser.add_argument('--bleu', action='store_true', help='If set, compute BLEU score after translation')
     parser.add_argument('--reference', type=str, help='Path to the reference file (one sentence per line, required if --bleu is set)')
+    parser.add_argument('--beam-size', default=5, type=int, help='Beam size for beam search')
     
     return parser.parse_args()
 
@@ -157,6 +158,7 @@ def main(args):
                                       src_pad_mask=src_pad_mask,
                                       max_out_len=args.max_len,
                                       tgt_tokenizer=tgt_tokenizer,
+                                      beam_size=args.beam_size,
                                       device=DEVICE)
             #----------------------------------------
 
