@@ -157,7 +157,6 @@ def main(args):
                                       src_pad_mask=src_pad_mask,
                                       max_out_len=args.max_len,
                                       tgt_tokenizer=tgt_tokenizer,
-                                      args=args,
                                       device=DEVICE)
             #----------------------------------------
 
