@@ -56,6 +56,8 @@ def get_args():
     parser.add_argument('--no-save', action='store_true', help='don\'t save models or checkpoints')
     parser.add_argument('--epoch-checkpoints', action='store_true', help='store all epoch checkpoints')
     parser.add_argument('--ignore-checkpoints', action='store_true', help='don\'t load any previous checkpoint')
+    parser.add_argument('--seed', default=42, type=int,
+                        help='pseudo random number generator seed')
     # Parse twice as model arguments are not known the first time
     args, _ = parser.parse_known_args()
     model_parser = parser.add_argument_group(argument_default=argparse.SUPPRESS)
@@ -70,7 +72,7 @@ def main(args):
     """ Main training function. Trains the translation model over the course of several epochs, including dynamic
     learning rate adjustment and gradient clipping. """
     logging.info('Commencing training!')
-    torch.manual_seed(SEED)
+    torch.manual_seed(args.seed)
 
     utils.init_logging(args)
 
@@ -118,7 +120,7 @@ def main(args):
         train_loader = \
             torch.utils.data.DataLoader(train_dataset, num_workers=1, collate_fn=train_dataset.collater,
                                         batch_sampler=BatchSampler(train_dataset, args.max_tokens, args.batch_size, 1,
-                                                                   0, shuffle=True, seed=SEED))
+                                                                   0, shuffle=True, seed=args.seed))
         model.train()
         stats = OrderedDict()
         stats['loss'] = 0
@@ -223,7 +225,7 @@ def validate(args, model, criterion, valid_dataset, epoch,
     valid_loader = \
         torch.utils.data.DataLoader(valid_dataset, num_workers=1, collate_fn=valid_dataset.collater,
                                     batch_sampler=BatchSampler(valid_dataset, args.max_tokens, args.batch_size, 1, 0,
-                                                               shuffle=False, seed=SEED))
+                                                               shuffle=False, seed=args.seed))
     model.eval()
     stats = OrderedDict()
     stats['valid_loss'] = 0
@@ -311,7 +313,7 @@ def evaluate(args, model, test_dataset,
         collate_fn=test_dataset.collater,
         # batch_size != 1 may mess things up with decoding
         batch_sampler=BatchSampler(test_dataset, args.max_tokens, batch_size=1, 
-                                   num_shards=1, shard_id=0, shuffle=False, seed=SEED),
+                                   num_shards=1, shard_id=0, shuffle=False, seed=args.seed),
     )
 
     model.eval()
@@ -368,7 +370,6 @@ def evaluate(args, model, test_dataset,
 
 if __name__ == '__main__':
     args = get_args()
-    args.seed = SEED
     os.makedirs(os.path.dirname(args.log_file), exist_ok=True)
 
     # Set up logging to file
