@@ -19,7 +19,7 @@ python translate.py \
     --input ~/shares/cz-en/data/raw/test.cz \
     --src-tokenizer cz-en-a3-task1-base/tokenizers/cz-bpe-8000.model \
     --tgt-tokenizer cz-en-a3-task1-base/tokenizers/en-bpe-8000.model \
-    --checkpoint-path cz-en-a3-task1-mqa/checkpoints/checkpoint_best.pt \
+    --checkpoint-path cz-en-a3-task1-base/checkpoints/checkpoint_best.pt \
     --output bs_exp/beam5_output.txt \
     --max-len 300 \
     --bleu \
