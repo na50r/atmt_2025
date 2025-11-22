@@ -21,5 +21,8 @@ toy_example/toy_example_output.en
 /example
 /cz-en
 
+cz-en-a3-task1-base/
+cz-en-a3-task1-mqa/
+
 # unused
 seq2seq/embedding_saver.py
