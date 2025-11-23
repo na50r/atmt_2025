@@ -5,7 +5,7 @@
 #SBATCH --mem=16GB
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus=1
-#SBATCH --output=a5_base.out
+#SBATCH --output=a5_test.out
 
 module load gpu
 module load mamba
