@@ -23,6 +23,8 @@ toy_example/toy_example_output.en
 
 cz-en-a3-task1-base/
 cz-en-a3-task1-mqa/
+cz-en-*/
+*.out
 
 # unused
 seq2seq/embedding_saver.py
