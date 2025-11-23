@@ -1,0 +1,36 @@
+Date: Sun Nov 23 13:42:20 CET 2025
+Branch: a5-test
+a5_test_beam_1.out 12.43 seconds
+a5_test_beam_3.out 36.06 seconds
+a5_test_beam_5.out 57.86 seconds
+
+Date: Sun Nov 23 13:50:43 CET 2025
+Branch: a5-test
+a5_test_beam_1.out 12.53 seconds
+a5_test_beam_3.out 36.37 seconds
+a5_test_beam_5.out 59.45 seconds
+
+Date: Sun Nov 23 13:54:09 CET 2025
+Branch: a5-test
+a5_test_beam_1.out 12.18 seconds
+a5_test_beam_3.out 35.34 seconds
+a5_test_beam_5.out 58.22 seconds
+
+Date: Sun Nov 23 14:06:15 CET 2025
+Branch: a5-test-optim
+a5_test_beam_1.out 8.46 seconds
+a5_test_beam_3.out 24.07 seconds
+a5_test_beam_5.out 39.27 seconds
+
+Date: Sun Nov 23 14:16:30 CET 2025
+Branch: a5-test-optim
+a5_test_beam_1.out 8.00 seconds
+a5_test_beam_3.out 23.19 seconds
+a5_test_beam_5.out 39.27 seconds
+
+Date: Sun Nov 23 14:19:22 CET 2025
+Branch: a5-test-optim
+a5_test_beam_1.out 8.36 seconds
+a5_test_beam_3.out 23.50 seconds
+a5_test_beam_5.out 38.09 seconds
+
