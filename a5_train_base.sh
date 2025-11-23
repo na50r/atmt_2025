@@ -13,7 +13,7 @@ source activate atmt
 export XLA_FLAGS=--xla_gpu_cuda_data_dir=$CONDA_PREFIX/pkgs/cuda-toolkit
 
 OUTDIR=cz-en-a5-base
-SEED=512
+SEED=426769
 mkdir $OUTDIR
 
 # PREPARE DATA
