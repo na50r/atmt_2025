@@ -25,6 +25,8 @@ cz-en-a3-task1-base/
 cz-en-a3-task1-mqa/
 cz-en-*/
 *.out
+*.cz
+*.en
 
 # unused
 seq2seq/embedding_saver.py
