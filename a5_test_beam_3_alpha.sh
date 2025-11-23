@@ -17,7 +17,6 @@ OUTDIR2=alphas
 rm -rf $OUTDIR2
 mkdir $OUTDIR2
 SEED=512
-mkdir $OUTDIR
 cat ~/shares/cz-en/data/raw/test.cz | head -n 100 > test.cz
 cat ~/shares/cz-en/data/raw/test.en | head -n 100 > test.en
 
