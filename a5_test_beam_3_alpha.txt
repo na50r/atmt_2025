@@ -1,0 +1,9 @@
+BLEU score: 20.14
+BLEU score: 20.14
+BLEU score: 19.70
+BLEU score: 19.22
+BLEU score: 18.90
+BLEU score: 18.99
+BLEU score: 18.99
+BLEU score: 18.98
+BLEU score: 19.61
