@@ -11,6 +11,7 @@ def decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_mask: torch.Te
     PAD = tgt_tokenizer.pad_id()
     generated = torch.full((batch_size, 1), BOS, dtype=torch.long, device=device)
     finished = torch.zeros(batch_size, dtype=torch.bool, device=device)
+    encoder_out = None
     for t in range(max_out_len):
         # Create target padding mask with correct batch dimension
         max_len = model.decoder.pos_embed.size(1)
@@ -19,7 +20,9 @@ def decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_mask: torch.Te
         # Ensure trg_pad_mask has shape (batch_size, seq_len)
         trg_pad_mask = (generated == PAD).unsqueeze(1).unsqueeze(2)  # (batch_size, 1, 1, seq_len)
         # Forward pass: use only the generated tokens so far
-        output = model(src_tokens, src_pad_mask, generated, trg_pad_mask).to(device)
+        if encoder_out is None:
+            encoder_out = model.encoder(src_tokens, src_pad_mask)
+        output = model.decoder(encoder_out, src_pad_mask, generated, trg_pad_mask).to(device)
         # Get the logits for the last time step
         next_token_logits = output[:, -1, :]  # last time step
         next_tokens = next_token_logits.argmax(dim=-1, keepdim=True)  # greedy
