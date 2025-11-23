@@ -5,7 +5,7 @@
 #SBATCH --mem=16GB
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus=1
-#SBATCH --output=a5_test_beam_5_alpha.out
+#SBATCH --output=a5_test_beam_3_alpha.out
 
 module load gpu
 module load mamba
@@ -29,10 +29,10 @@ for i in 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9; do
         --src-tokenizer $OUTDIR/tokenizers/cz-bpe-8000.model \
         --tgt-tokenizer $OUTDIR/tokenizers/en-bpe-8000.model \
         --checkpoint-path $OUTDIR/checkpoints/checkpoint_best.pt \
-        --output $OUTDIR2/output_beam_5_alpha_$i.txt \
+        --output $OUTDIR2/output_beam_3_alpha_$i.txt \
         --max-len 300 \
         --bleu \
         --reference test.en \
         --seed $SEED \
-        --beam-size 5 \
+        --beam-size 3 \
         --alpha=$i
