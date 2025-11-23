@@ -1,7 +1,5 @@
 #!/bin/bash
 out="times.txt"
-
-echo "Translation times extracted:" >> "$out"
 date_stamp=$(date)
 echo "Date: $date_stamp" >> "$out" 
 curr=$(git branch --show-current)
