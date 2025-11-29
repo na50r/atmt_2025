@@ -20,9 +20,7 @@ toy_example/toy_example_output.en
 # other outputs
 /example
 /cz-en
-
-cz-en-a3-task1-base/
-cz-en-a3-task1-mqa/
+cz-en-a5-base/
 
 # unused
 seq2seq/embedding_saver.py
