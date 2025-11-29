@@ -94,7 +94,7 @@ def beam_search_decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_ma
                 print('DEBUG: Remove beam/cand')
                 to_removed.append(i)
             print()
-        for i in to_removed:
+        for i in sorted(to_removed, reverse=True):
             del beams[i]
             
         beams = sorted(new_beams, key=lambda x: x[1], reverse=True)[:beam_size]
