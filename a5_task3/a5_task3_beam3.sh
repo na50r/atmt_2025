@@ -14,12 +14,14 @@ export XLA_FLAGS=--xla_gpu_cuda_data_dir=$CONDA_PREFIX/pkgs/cuda-toolkit
 
 MODEL_DIR=~/shares/groups/turing/a5/cz-en-a5-base
 OUT_DIR=~/shares/groups/turing/a5/cz-en-a5-base/a5_task3
+SCRIPTS=~/shares/groups/turing/a5
+
 SEED=512
 cat ~/shares/cz-en/data/raw/test.cz | head -n 100 > test.cz
 cat ~/shares/cz-en/data/raw/test.en | head -n 100 > test.en
 
 # TRANSLATE
-python translate.py \
+python $SCRIPTS/translate.py \
     --cuda \
     --input test.cz \
     --src-tokenizer $MODEL_DIR/tokenizers/cz-bpe-8000.model \
