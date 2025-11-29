@@ -1,0 +1,54 @@
+Date: Sat Nov 29 11:58:06 CET 2025
+Branch: a5
+a5_task3_beam1.out 16.45 seconds
+a5_task3_beam1.out BLEU score: 17.21
+a5_task3_beam3.out 37.57 seconds
+a5_task3_beam3.out BLEU score: 20.03
+a5_task3_beam5.out 61.58 seconds
+a5_task3_beam5.out BLEU score: 23.76
+
+Date: Sat Nov 29 12:03:56 CET 2025
+Branch: a5
+a5_task3_beam1.out 16.40 seconds
+a5_task3_beam1.out BLEU score: 17.21
+a5_task3_beam3.out 38.58 seconds
+a5_task3_beam3.out BLEU score: 20.03
+a5_task3_beam5.out 62.48 seconds
+a5_task3_beam5.out BLEU score: 23.76
+
+Date: Sat Nov 29 12:06:34 CET 2025
+Branch: a5
+a5_task3_beam1.out 15.79 seconds
+a5_task3_beam1.out BLEU score: 17.21
+a5_task3_beam3.out 37.88 seconds
+a5_task3_beam3.out BLEU score: 20.03
+a5_task3_beam5.out 61.86 seconds
+a5_task3_beam5.out BLEU score: 23.76
+
+Date: Sat Nov 29 12:13:51 CET 2025
+Branch: a5-optim
+a5_task3_beam1.out 11.06 seconds
+a5_task3_beam1.out BLEU score: 17.21
+a5_task3_beam3.out 25.71 seconds
+a5_task3_beam3.out BLEU score: 20.03
+a5_task3_beam5.out 41.88 seconds
+a5_task3_beam5.out BLEU score: 23.76
+
+Date: Sat Nov 29 12:16:13 CET 2025
+Branch: a5-optim
+a5_task3_beam1.out 11.01 seconds
+a5_task3_beam1.out BLEU score: 17.21
+a5_task3_beam3.out 25.79 seconds
+a5_task3_beam3.out BLEU score: 20.03
+a5_task3_beam5.out 42.00 seconds
+a5_task3_beam5.out BLEU score: 23.76
+
+Date: Sat Nov 29 12:19:08 CET 2025
+Branch: a5-optim
+a5_task3_beam1.out 10.58 seconds
+a5_task3_beam1.out BLEU score: 17.21
+a5_task3_beam3.out 25.22 seconds
+a5_task3_beam3.out BLEU score: 20.03
+a5_task3_beam5.out 55.51 seconds
+a5_task3_beam5.out BLEU score: 23.76
+
