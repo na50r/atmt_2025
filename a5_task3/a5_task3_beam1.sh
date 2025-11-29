@@ -13,7 +13,7 @@ source activate atmt
 export XLA_FLAGS=--xla_gpu_cuda_data_dir=$CONDA_PREFIX/pkgs/cuda-toolkit
 
 MODEL_DIR=~/shares/groups/turing/a5/cz-en-a5-base
-OUT_DIR=~/shares/groups/turing/a5/cz-en-a5-base/a5_task3
+OUT_DIR=~/shares/groups/turing/a5/a5_task3
 SCRIPTS=~/shares/groups/turing/a5
 SEED=512
 cat ~/shares/cz-en/data/raw/test.cz | head -n 100 > test.cz
