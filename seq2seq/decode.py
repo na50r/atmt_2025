@@ -90,7 +90,7 @@ def beam_search_decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_ma
             print('DEBUG: Beam Cnt', len(beams))
             score = b[-1]
             print('DEBUG: Beam Score', i, score)
-            if (score <= 0.6 * curr_best):
+            if score <= (curr_best-0.6):
                 print('DEBUG: Removing beam')
             else:
                 updated_beams.append(b)
