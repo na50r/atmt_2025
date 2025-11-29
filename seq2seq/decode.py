@@ -72,7 +72,6 @@ def beam_search_decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_ma
                     encoder_out = model.encoder(src_tokens, src_pad_mask)
                 logits = model.decoder(
                     encoder_out, src_pad_mask, seq, trg_pad_mask)[:, -1, :]
-
                 # __QUESTION 3: Explain the purpose of applying log_softmax and selecting top-k tokens here.
                 log_probs = torch.nn.functional.log_softmax(logits, dim=-1)
                 topk_log_probs, topk_ids = log_probs.topk(beam_size, dim=-1)
@@ -83,7 +82,6 @@ def beam_search_decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_ma
                 out_len = new_seq.size(1)
                 divider = ((5 + out_len) ** alpha) / (6 ** alpha)
                 new_score = score + (topk_log_probs[:, k].item() / divider)
-                new_score = score + topk_log_probs[:, k].item()
                 new_beams.append((new_seq, new_score))
 
         beams = sorted(new_beams, key=lambda x: x[1], reverse=True)[:beam_size]
