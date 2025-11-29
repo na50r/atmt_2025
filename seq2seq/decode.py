@@ -90,10 +90,10 @@ def beam_search_decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_ma
             print('DEBUG: Beam Cnt', len(beams))
             score = b[-1]
             print('DEBUG: Beam Score', i, score)
-            if score > 0.6 * curr_best:
-                updated_beams.append(b)
+            if (score <= 0.6 * curr_best):
+                print('DEBUG: Removing beam')
             else:
-                print('DEBUG: Removing beam')        
+                updated_beams.append(b)
         beams = sorted(updated_beams, key=lambda x: x[1], reverse=True)[:beam_size]
         if all(seq[0, -1].item() == EOS for seq, _ in beams):
             break
