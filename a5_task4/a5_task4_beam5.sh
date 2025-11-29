@@ -5,7 +5,7 @@
 #SBATCH --mem=16GB
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus=1
-#SBATCH --output=a5_task4_es.out
+#SBATCH --output=a5_task4_beam5.out
 
 module load gpu
 module load mamba
@@ -27,9 +27,9 @@ python $SCRIPTS/translate.py \
     --src-tokenizer $MODEL_DIR/tokenizers/cz-bpe-8000.model \
     --tgt-tokenizer $MODEL_DIR/tokenizers/en-bpe-8000.model \
     --checkpoint-path $MODEL_DIR/checkpoints/checkpoint_best.pt \
-    --output $OUT_DIR/a5_task4_es.txt \
+    --output $OUT_DIR/a5_task4_beam5.txt \
     --max-len 300 \
     --bleu \
     --reference test.en \
     --seed $SEED \
-    --beam-size 10
+    --beam-size 5
