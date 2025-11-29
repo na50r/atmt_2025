@@ -84,9 +84,10 @@ def beam_search_decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_ma
 
         beams = sorted(new_beams, key=lambda x: x[1], reverse=True)[:beam_size]
         # __QUESTION 5: Why do we check for EOS here and what does it imply for beam search?
+        for i, b in enumerate(beams):
+            print('DEBUG: Beam Score', i,  b[-1])
+            print()
         if all(seq[0, -1].item() == EOS for seq, _ in beams):
-            for b in beams:
-                print('DEBUG: Beam Score', b[-1])
             break
     best_seq, _ = beams[0]
     # __QUESTION 6: What is returned, and why are we squeezing, converting to list and wrapping in another list here?
