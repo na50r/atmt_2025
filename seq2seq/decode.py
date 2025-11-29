@@ -85,18 +85,16 @@ def beam_search_decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_ma
         beams = sorted(new_beams, key=lambda x: x[1], reverse=True)[:beam_size]
         # __QUESTION 5: Why do we check for EOS here and what does it imply for beam search?
         curr_best = max(beams, key=lambda x: x[1])[-1]
-        new_beams = []
+        updated_beams = []
         for i, b in enumerate(beams):
             print('DEBUG: Beam Cnt', len(beams))
             score = b[-1]
             print('DEBUG: Beam Score', i, score)
             if score > 0.6 * curr_best:
-                new_beams.append(b)
+                updated_beams.append(b)
             else:
-                print('DEBUG: Removing beam')
-        beams = new_beams
-        
-        beams = sorted(new_beams, key=lambda x: x[1], reverse=True)[:beam_size]
+                print('DEBUG: Removing beam')        
+        beams = sorted(updated_beams, key=lambda x: x[1], reverse=True)[:beam_size]
         if all(seq[0, -1].item() == EOS for seq, _ in beams):
             break
     best_seq, _ = beams[0]
