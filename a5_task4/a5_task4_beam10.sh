@@ -32,4 +32,5 @@ python $SCRIPTS/translate.py \
     --bleu \
     --reference test.en \
     --seed $SEED \
-    --beam-size 10
+    --beam-size 10 \
+    --es-threshold 2.5

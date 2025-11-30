@@ -87,12 +87,14 @@ def beam_search_decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_ma
         # Implemented Early Stoping using Absolute Threshold Pruning (ATP)
         curr_best = max(beams, key=lambda x: x[1])[-1]
         updated_beams = []
+        threshold = args.es_threshold
         for i, b in enumerate(beams):
             print('DEBUG: Beam Cnt', len(beams))
             score = b[-1]
             print('DEBUG: Beam Score', i, score)
-            if score <= (curr_best-2.5):
-                print(f'DEBUG: Removing beam {score:.2f} <= {curr_best}-AP (AP=2.5)')
+            if score <= (curr_best-threshold):
+                print(
+                    f'DEBUG: Removing beam {score:.2f} <= {curr_best}-AP (AP={threshold})')
             else:
                 updated_beams.append(b)
         beams = sorted(updated_beams, key=lambda x: x[1], reverse=True)[:beam_size]
