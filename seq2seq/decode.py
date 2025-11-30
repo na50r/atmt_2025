@@ -1,6 +1,7 @@
 import torch
 import sentencepiece as spm
 from seq2seq.models import Seq2SeqModel
+import math
 
 
 def decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_mask: torch.Tensor, max_out_len: int,
@@ -54,13 +55,14 @@ def beam_search_decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_ma
     model.eval()
     BOS, EOS, PAD = tgt_tokenizer.bos_id(), tgt_tokenizer.eos_id(), tgt_tokenizer.pad_id()
     # __QUESTION 1: what does this line set up and why is the beam represented this way?
-    beams = [(torch.tensor([[BOS]], device=device), 0.0)]
+    # Implement relative local threshold pruning, add a third value in beams, the last score
+    beams = [(torch.tensor([[BOS]], device=device), 0.0, 0.0)]
     encoder_out = None
     for _ in range(max_out_len):
         new_beams = []
-        for seq, score in beams:
+        for seq, score, lscore in beams:
             if seq[0, -1].item() == EOS:
-                new_beams.append((seq, score))
+                new_beams.append((seq, score, lscore))
                 continue
             with torch.no_grad():
                 max_len = model.decoder.pos_embed.size(1)
@@ -79,20 +81,25 @@ def beam_search_decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_ma
             for k in range(beam_size):
                 # __QUESTION 4: explain the tensor shapes and the logic when creating new_seq and new_score below. Is any broadcasting or indexing issue possible?
                 new_seq = torch.cat([seq, topk_ids[:, k].unsqueeze(0)], dim=1)
-                new_score = score + topk_log_probs[:, k].item()
-                new_beams.append((new_seq, new_score))
+                last_score = topk_log_probs[:, k].item()
+                new_score = score + last_score
+                new_beams.append((new_seq, new_score, last_score))
 
         beams = sorted(new_beams, key=lambda x: x[1], reverse=True)[:beam_size]
         # __QUESTION 5: Why do we check for EOS here and what does it imply for beam search?
-        curr_best = max(beams, key=lambda x: x[1])[-1]
+        # Implementing Relative Local Threshold Pruning
+        # Doesn't work well with log probs, use math.exp to get real probs, then scale via rpl value
+        curr_best = max(beams, key=lambda x: x[2])[-1]
         updated_beams = []
         for i, b in enumerate(beams):
             print('DEBUG: Beam Cnt', len(beams))
             score = b[-1]
             print('DEBUG: Beam Score', i, score)
-            if score <= (curr_best-2.5):
-                print(f'{score:.2f} <= {curr_best}-2.5')
-                print('DEBUG: Removing beam')
+            # Relative scaling with log probs not ideal, we use real probs instead
+            scaled_score = math.exp(scaled_score)
+            scaled_best = math.exp(curr_best)
+            if scaled_score <= (scaled_best * 0.02):
+                print(f'DEBUG: Remove {scaled_score:.2f} <= {scaled_best} * RPL (RPL=0.02)')
             else:
                 updated_beams.append(b)
         beams = sorted(updated_beams, key=lambda x: x[1], reverse=True)[:beam_size]
