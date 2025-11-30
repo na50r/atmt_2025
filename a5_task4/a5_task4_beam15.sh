@@ -5,7 +5,7 @@
 #SBATCH --mem=16GB
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus=1
-#SBATCH --output=a5_task4_beam5.out
+#SBATCH --output=a5_task4_beam15.out
 
 module load gpu
 module load mamba
@@ -15,7 +15,7 @@ export XLA_FLAGS=--xla_gpu_cuda_data_dir=$CONDA_PREFIX/pkgs/cuda-toolkit
 MODEL_DIR=~/shares/groups/turing/a5/cz-en-a5-base
 OUT_DIR=~/shares/groups/turing/a5/a5_task4
 SCRIPTS=~/shares/groups/turing/a5
-BS=5
+BS=15
 
 SEED=512
 cat ~/shares/cz-en/data/raw/test.cz | head -n 100 > test.cz
