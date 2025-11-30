@@ -98,8 +98,9 @@ def beam_search_decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_ma
             # Relative scaling with log probs not ideal, we use real probs instead
             scaled_score = math.exp(score)
             scaled_best = math.exp(curr_best)
-            if scaled_score <= (scaled_best * 0.3):
-                print(f'DEBUG: Remove {scaled_score:.2f} <= {scaled_best} * RPL (RPL=0.02)')
+            threshold = args.es_threshold
+            if scaled_score <= (scaled_best * threshold):
+                print(f'DEBUG: Remove {scaled_score:.2f} <= {scaled_best} * RPL (RPL={threshold})')
             else:
                 updated_beams.append(b)
         beams = sorted(updated_beams, key=lambda x: x[1], reverse=True)[:beam_size]

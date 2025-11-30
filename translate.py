@@ -45,6 +45,8 @@ def get_args():
     # BLEU computation arguments
     parser.add_argument('--bleu', action='store_true', help='If set, compute BLEU score after translation')
     parser.add_argument('--reference', type=str, help='Path to the reference file (one sentence per line, required if --bleu is set)')
+    # Add ATP / RPL threshold
+    parser.add_argument('--es-threshold', type=float, help="Absolute Threshold / Relative Local Threshold Pruning threshold value, depends on branch")
     
     return parser.parse_args()
 
