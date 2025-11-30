@@ -103,7 +103,7 @@ def beam_search_decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_ma
             else:
                 updated_beams.append(b)
         beams = sorted(updated_beams, key=lambda x: x[1], reverse=True)[:beam_size]
-        if all(seq[0, -1].item() == EOS for seq, _ in beams):
+        if all(seq[0, -1].item() == EOS for seq, _, _ in beams):
             break
     best_seq, _ = beams[0]
     # __QUESTION 6: What is returned, and why are we squeezing, converting to list and wrapping in another list here?
