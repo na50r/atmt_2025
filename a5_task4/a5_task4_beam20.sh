@@ -5,7 +5,7 @@
 #SBATCH --mem=16GB
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus=1
-#SBATCH --output=a5_task4_beam15.out
+#SBATCH --output=a5_task4_beam20.out
 
 module load gpu
 module load mamba
