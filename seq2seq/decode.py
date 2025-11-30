@@ -84,6 +84,7 @@ def beam_search_decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_ma
 
         beams = sorted(new_beams, key=lambda x: x[1], reverse=True)[:beam_size]
         # __QUESTION 5: Why do we check for EOS here and what does it imply for beam search?
+        # Implemented Early Stoping using Absolute Threshold Pruning (ATP)
         curr_best = max(beams, key=lambda x: x[1])[-1]
         updated_beams = []
         for i, b in enumerate(beams):
@@ -91,8 +92,7 @@ def beam_search_decode(model: Seq2SeqModel, src_tokens: torch.Tensor, src_pad_ma
             score = b[-1]
             print('DEBUG: Beam Score', i, score)
             if score <= (curr_best-2.5):
-                print(f'{score:.2f} <= {curr_best}-2.5')
-                print('DEBUG: Removing beam')
+                print(f'DEBUG: Removing beam {score:.2f} <= {curr_best}-AP (AP=2.5)')
             else:
                 updated_beams.append(b)
         beams = sorted(updated_beams, key=lambda x: x[1], reverse=True)[:beam_size]
