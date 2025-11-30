@@ -5,7 +5,7 @@
 #SBATCH --mem=16GB
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus=1
-#SBATCH --output=a5_task4_lp.out
+#SBATCH --output=a5_task4_loop.out
 
 module load gpu
 module load mamba
@@ -20,7 +20,7 @@ cat ~/shares/cz-en/data/raw/test.cz | head -n 100 > test.cz
 cat ~/shares/cz-en/data/raw/test.en | head -n 100 > test.en
 
 # TRANSLATE
-for threshold in 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9; do
+for threshold in 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9; do
     for beam_size in 3 5 10 14; do
     python $SCRIPTS/translate.py \
         --cuda \
