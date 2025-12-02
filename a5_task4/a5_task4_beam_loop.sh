@@ -21,7 +21,7 @@ cat ~/shares/cz-en/data/raw/test.en | head -n 100 > test.en
 
 # TRANSLATE
 for threshold in 0.5 1 1.5 2 2.5 3 3.5 4; do
-    for beam_size in 3 5 10 14; do
+    for beam_size in 3 5 10 14 20; do
     python $SCRIPTS/translate.py \
         --cuda \
         --input test.cz \
