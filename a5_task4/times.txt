@@ -1,0 +1,13 @@
+Date: Sun Dec  7 12:37:15 PM CET 2025
+Branch: a5-optim
+a5_task4_beam3.out 33.20 seconds
+a5_task4_beam3.out BLEU score: 20.03
+a5_task4_beam5.out 42.71 seconds
+a5_task4_beam5.out BLEU score: 23.76
+a5_task4_beam10.out 86.15 seconds
+a5_task4_beam10.out BLEU score: 24.65
+a5_task4_beam15.out 146.12 seconds
+a5_task4_beam15.out BLEU score: 25.09
+a5_task4_beam20.out 264.79 seconds
+a5_task4_beam20.out BLEU score: 25.28
+
