@@ -24,3 +24,7 @@ cz-en-a5-base/
 
 # unused
 seq2seq/embedding_saver.py
+
+a5_task4/loop/*
+*.cz
+*.en
